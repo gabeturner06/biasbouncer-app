@@ -133,7 +133,7 @@ async def run_agents(
 # ------------------------------------------------------------------------------
 # 5. Main Page Layout (Preserve old style)
 # ------------------------------------------------------------------------------
-LOGO_URL_LARGE = "/Users/gabrielryanturner/Documents/Source/archive/biasbouncer-auto-gpt/backup/biasbouncer-logo.png"
+LOGO_URL_LARGE = "/workspaces/biasbouncer-app/images/biasbouncer-logo.png"
 
 st.logo(
     image=LOGO_URL_LARGE,
