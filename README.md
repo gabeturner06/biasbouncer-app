@@ -2,11 +2,6 @@
 
 **BiasBouncer** is a powerful tool designed to detect, analyze, and mitigate biases in AI models, particularly in natural language processing (NLP). Built with cutting-edge technology like **LangChain**, **Streamlit**, and **OpenAI**, it helps users identify biases in AI outputs and provides solutions for fairer, more inclusive models.
 
----
-
-![BiasBouncer Logo](Screen Shot 2025-01-20 at 11.01.26 PM.png)
-
----
 
 ## 🚀 **Features**
 
