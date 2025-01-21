@@ -4,6 +4,10 @@
 
 ---
 
+![BiasBouncer Logo](images/Screen Shot 2025-01-20 at 11.01.26 PM.png)
+
+---
+
 ## 🚀 **Features**
 
 - **Bias Detection:** Leverages machine learning and NLP techniques to detect biases in AI-generated content.
