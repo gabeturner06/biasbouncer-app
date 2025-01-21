@@ -2,9 +2,6 @@ import asyncio
 import streamlit as st
 from typing import List, Dict
 
-# LangChain imports
-from langchain_community.vectorstores import Chroma
-from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_community.chat_models.openai import ChatOpenAI
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
@@ -34,14 +31,6 @@ if "chat_history" not in st.session_state:
 if "companies" not in st.session_state:
     # Dynamically generated list of 'perspectives'
     st.session_state["companies"] = []
-
-# ------------------------------------------------------------------------------
-# 3. Vector store (if needed) and base LLM
-# ------------------------------------------------------------------------------
-vectorstore = Chroma(
-    embedding_function=OpenAIEmbeddings(),
-    persist_directory="./chroma_db_oai"
-)
 
 llm = ChatOpenAI(temperature=0)  # Base LLM (not used directly below but you can adapt)
 
