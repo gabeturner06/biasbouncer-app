@@ -1,3 +1,7 @@
+import os
+
+os.environ["PATH"] = f"{os.environ['HOME']}/sqlite/bin:" + os.environ["PATH"]
+
 import asyncio
 import streamlit as st
 from typing import List, Dict
