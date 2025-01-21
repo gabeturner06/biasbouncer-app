@@ -1,6 +1,15 @@
 import os
+import subprocess
 
-os.environ["PATH"] = f"{os.environ['HOME']}/sqlite/bin:" + os.environ["PATH"]
+# Ensure SQLite is upgraded
+if not os.path.exists("/usr/local/bin/sqlite3") or subprocess.run(["sqlite3", "--version"]).returncode != 0:
+    try:
+        subprocess.run(["bash", "setup.sh"], check=True)
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError("SQLite upgrade failed. Check logs for details.") from e
+
+sqlite_version = subprocess.run(["sqlite3", "--version"], capture_output=True, text=True).stdout
+print(f"SQLite version: {sqlite_version}")
 
 import asyncio
 import streamlit as st
