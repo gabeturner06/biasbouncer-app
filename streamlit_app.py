@@ -142,6 +142,15 @@ st.logo(
 st.markdown("<h1 style='text-align: center;'><span style='color: red;'>BiasBouncer</span></h1>", unsafe_allow_html=True)
 st.markdown("<h3 style='text-align: center;'>Team WorkBench</h3>", unsafe_allow_html=True)
 
+@st.dialog("How BiasBouncer Works")
+def explain():
+    st.divider()
+    st.write("Every idea begins to take shape with a Brainstorming session. Ask a question or pitch your idea to BiasBouncer in the Brainstorm Chat. From there, BiasBouncer will explore the different perspectives needed to accurately address the complications of your idea. Each agent will respond to you casually, outlining their informed thoughts or spitballing new ideas. Keep brainstorming with your team the same way you would with your friends or work partners. When you have a plan put together, you can begin orchestrating your work.")
+    st.write("BiasBouncer will instruct agents to simultaneously perform different tasks like research, coding, reviewing, and more. Those tasks will populate in the 'To Do' column and gradually move to the right, so you can monitor their progress and review the task details. You can always chat with the agents if they have questions about their work or you want to add feedback. Once all the tasks have ended up in the 'Done' column, your finished project will be ready to download!")
+    st.caption("As of the last update on 1/22/2025, the Brainstorm Chat is currently operational and is available by clicking the sidebar arrow at the top left hand corner of the page. Team WorkBench functionality coming soon.")
+if st.button("How it Works", type="secondary"):
+    explain()
+
 st.divider()
 
 col1, col2, col3, col4 = st.columns(4, border=True, gap="small")
@@ -193,23 +202,8 @@ with col4:
     st.subheader("Done")
     st.markdown("##")
 
-st.markdown("##")
-
 # ------------------------------------------------------------------------------
-# 6. How it Works Section
-# ------------------------------------------------------------------------------
-
-@st.dialog("How BiasBouncer Works")
-def explain():
-    st.divider()
-    st.write("Every idea begins to take shape with a Brainstorming session. Ask a question or pitch your idea to BiasBouncer in the Brainstorm Chat. From there, BiasBouncer will explore the different perspectives needed to accurately address the complications of your idea. Each agent will respond to you casually, outlining their informed thoughts or spitballing new ideas. Keep brainstorming with your team the same way you would with your friends or work partners. When you have a plan put together, you can begin orchestrating your work.")
-    st.markdown("##")
-    st.write("BiasBouncer will instruct agents to simultaneously perform different tasks like research, coding, reviewing, and more. Those tasks will populate in the 'To Do' column and gradually move to the right, so you can monitor their progress and review the task details. You can always chat with the agents if they have questions about their work or you want to add feedback. Once all the tasks have ended up in the 'Done' column, your finished project will be ready to download!")
-if st.button("How it Works", type="secondary"):
-    explain()
-
-# ------------------------------------------------------------------------------
-# 7. Sidebar Chat
+# 6. Sidebar Chat
 # ------------------------------------------------------------------------------
 with st.sidebar:
     st.title("Brainstorm Chat")
