@@ -142,6 +142,8 @@ st.logo(
 st.markdown("<h1 style='text-align: center;'><span style='color: red;'>BiasBouncer</span></h1>", unsafe_allow_html=True)
 st.markdown("<h3 style='text-align: center;'>Team WorkBench</h3>", unsafe_allow_html=True)
 
+st.divider()
+
 @st.dialog("How BiasBouncer Works")
 def explain():
     st.divider()
@@ -150,8 +152,6 @@ def explain():
     st.caption("As of the last update on 1/22/2025, the Brainstorm Chat is currently operational and available. Team WorkBench functionality coming soon.")
 if st.button("How it Works", type="secondary"):
     explain()
-
-st.divider()
 
 col1, col2, col3, col4 = st.columns(4, border=True, gap="small")
 
