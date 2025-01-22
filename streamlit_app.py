@@ -45,12 +45,10 @@ async def determine_companies(message: str, agent_number: int) -> List[str]:
     llm_instance = ChatOpenAI(temperature=0, model="gpt-4")
 
     template = f"""
-    Based on this user query, identify a list of up to {agent_number} diverse perspectives or roles
-    that could respond to the problem with different solutions. Or, if they ask the to argue over 
-    specified perspectives or items (e.g., if they ask you to argue over what item is best over a set 
-    of items, each agent should advocate for one of the items), use their specified items as the 
-    perspectives (e.g., if the user asks for a debate over which "x" is best, each different "x" should 
-    be a perspective). Return them as comma-separated values.
+    Identify a list of up to {agent_number} of perspectives or advocates that could respond to the user's 
+    problem or question with different solutions. If the user lists different perspectives or sides of an 
+    argument, only use their suggestions. If they do not, create them in a way that will foster a conversation 
+    between diverse perspectives. Return them as comma-separated values.
 
     User query: {message}
     """
@@ -74,7 +72,7 @@ async def generate_response(
     llm_instance = ChatOpenAI(temperature=0.7, model="gpt-4")
     template = """
     You're in a casual group brainstorming chat representing or in support of the perspective: {company}.
-    The user just said: {user_message}
+    The user just asked: {user_message}
     Entire conversation so far:
     {conversation_so_far}
 
@@ -141,7 +139,7 @@ st.logo(
     size="large"
 )
 
-st.markdown("<h1 style='text-align: center;'><span style='color: white;'>Bias</span><span style='color: red;'>Bouncer</span></h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center;'><span style='color: red;'>BiasBouncer</span></h1>", unsafe_allow_html=True)
 st.markdown("<h3 style='text-align: center;'>Team WorkBench</h3>", unsafe_allow_html=True)
 
 st.divider()
@@ -151,37 +149,37 @@ col1, col2, col3, col4 = st.columns(4, border=True, gap="small")
 
 with col1:
     st.subheader("To Do")
-    @st.dialog("Task One")
-    def view():
-        st.html("<ul><li><h3>Agents: --</h3></li><li><h3>Tools: --</h3></li><li><h3>Description: --</h3></li><li><h3>Status: To Do</h3></li></ul>")
-        st.markdown("##")
-        st.write("Once your agents have created a plan in the Chat, the Tasks they'll work to complete will populate here. This is where you will be able to see the details of each task. If an agent has a question regarding their Task, they will ask you in the Chat.")
-    if st.button("Task One", use_container_width=True, type="primary"):
-        view()
-    
-    @st.dialog("Task Two")
-    def view():
-        st.html("<ul><li><h3>Agents: --</h3></li><li><h3>Tools: --</h3></li><li><h3>Description: --</h3></li><li><h3>Status: To Do</h3></li></ul>")
-        st.markdown("##")
-        st.write("Once your agents have created a plan in the Chat, the Tasks they'll work to complete will populate here. This is where you will be able to see the details of each task. If an agent has a question regarding their Task, they will ask you in the Chat.")
-    if st.button("Task Two", use_container_width=True, type="primary"):
-        view()
+        @st.dialog("Task One")
+        def view():
+            st.html("<ul><li><h3>Agents: --</h3></li><li><h3>Tools: --</h3></li><li><h3>Description: --</h3></li><li><h3>Status: To Do</h3></li></ul>")
+            st.markdown("##")
+            st.write("Once your agents have created a plan in the Chat, the Tasks they'll work to complete will populate here. This is where you will be able to see the details of each task. If an agent has a question regarding their Task, they will ask you in the Chat.")
+        if st.button("Task One", use_container_width=True, type="primary"):
+            view()
+        
+        @st.dialog("Task Two")
+        def view():
+            st.html("<ul><li><h3>Agents: --</h3></li><li><h3>Tools: --</h3></li><li><h3>Description: --</h3></li><li><h3>Status: To Do</h3></li></ul>")
+            st.markdown("##")
+            st.write("Once your agents have created a plan in the Chat, the Tasks they'll work to complete will populate here. This is where you will be able to see the details of each task. If an agent has a question regarding their Task, they will ask you in the Chat.")
+        if st.button("Task Two", use_container_width=True, type="primary"):
+            view()
 
-    @st.dialog("Task Three")
-    def view():
-        st.html("<ul><li><h3>Agents: --</h3></li><li><h3>Tools: --</h3></li><li><h3>Description: --</h3></li><li><h3>Status: To Do</h3></li></ul>")
-        st.markdown("##")
-        st.write("Once your agents have created a plan in the Chat, the Tasks they'll work to complete will populate here. This is where you will be able to see the details of each task. If an agent has a question regarding their Task, they will ask you in the Chat.")
-    if st.button("Task Three", use_container_width=True, type="primary"):
-        view()
-    
-    @st.dialog("Task Four")
-    def view():
-        st.html("<ul><li><h3>Agents: --</h3></li><li><h3>Tools: --</h3></li><li><h3>Description: --</h3></li><li><h3>Status: To Do</h3></li></ul>")
-        st.markdown("##")
-        st.write("Once your agents have created a plan in the Chat, the Tasks they'll work to complete will populate here. This is where you will be able to see the details of each task. If an agent has a question regarding their Task, they will ask you in the Chat.")
-    if st.button("Task Four", use_container_width=True, type="primary"):
-        view()
+        @st.dialog("Task Three")
+        def view():
+            st.html("<ul><li><h3>Agents: --</h3></li><li><h3>Tools: --</h3></li><li><h3>Description: --</h3></li><li><h3>Status: To Do</h3></li></ul>")
+            st.markdown("##")
+            st.write("Once your agents have created a plan in the Chat, the Tasks they'll work to complete will populate here. This is where you will be able to see the details of each task. If an agent has a question regarding their Task, they will ask you in the Chat.")
+        if st.button("Task Three", use_container_width=True, type="primary"):
+            view()
+        
+        @st.dialog("Task Four")
+        def view():
+            st.html("<ul><li><h3>Agents: --</h3></li><li><h3>Tools: --</h3></li><li><h3>Description: --</h3></li><li><h3>Status: To Do</h3></li></ul>")
+            st.markdown("##")
+            st.write("Once your agents have created a plan in the Chat, the Tasks they'll work to complete will populate here. This is where you will be able to see the details of each task. If an agent has a question regarding their Task, they will ask you in the Chat.")
+        if st.button("Task Four", use_container_width=True, type="primary"):
+            view()
 
 with col2:
     st.subheader("In Progress")
@@ -195,8 +193,24 @@ with col4:
     st.subheader("Done")
     st.markdown("##")
 
+st.markdown("##")
+
 # ------------------------------------------------------------------------------
-# 6. Sidebar Chat
+# 6. How it Works Section
+# ------------------------------------------------------------------------------
+
+@st.dialog("How BiasBouncer Works")
+def explain():
+    st.subheader("How BiasBouncer Works")
+    st.divider()
+    st.write("Every idea begins to take shape with a Brainstorming session. Ask a question or pitch your idea to BiasBouncer in the Brainstorm Chat. From there, BiasBouncer will explore the different perspectives needed to accurately address the complications of your idea. Each agent will respond to you casually, outlining their informed thoughts or spitballing new ideas. Keep brainstorming with your team the same way you would with your friends or work partners. When you have a plan put together, you can begin orchestrating your work.")
+    st.markdown("##")
+    st.write("BiasBouncer will instruct agents to simultaneously perform different tasks like research, coding, reviewing, and more. Those tasks will populate in the 'To Do' column and gradually move to the right, so you can monitor their progress and review the task details. You can always chat with the agents if they have questions about their work or you want to add feedback. Once all the tasks have ended up in the 'Done' column, your finished project will be ready to download!")
+if st.button("How it Works", type="secondary"):
+    explain()
+
+# ------------------------------------------------------------------------------
+# 7. Sidebar Chat
 # ------------------------------------------------------------------------------
 with st.sidebar:
     st.title("Brainstorm Chat")
