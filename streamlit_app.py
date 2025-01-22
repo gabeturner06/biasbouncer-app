@@ -201,7 +201,6 @@ st.markdown("##")
 
 @st.dialog("How BiasBouncer Works")
 def explain():
-    st.subheader("How BiasBouncer Works")
     st.divider()
     st.write("Every idea begins to take shape with a Brainstorming session. Ask a question or pitch your idea to BiasBouncer in the Brainstorm Chat. From there, BiasBouncer will explore the different perspectives needed to accurately address the complications of your idea. Each agent will respond to you casually, outlining their informed thoughts or spitballing new ideas. Keep brainstorming with your team the same way you would with your friends or work partners. When you have a plan put together, you can begin orchestrating your work.")
     st.markdown("##")
