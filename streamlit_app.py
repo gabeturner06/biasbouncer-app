@@ -3,6 +3,7 @@ import streamlit as st
 from typing import List, Dict
 
 from langchain_community.chat_models.openai import ChatOpenAI
+from langchain_community.utilities import DuckDuckGoSearchAPIWrapper
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
 
@@ -12,13 +13,16 @@ from langchain.chains import LLMChain
 st.set_page_config(layout="wide")
 
 # ------------------------------------------------------------------------------
-# 2. Access API Key from Streamlit secrets
+# 2. Access API Key(s) and WebSearch
 # ------------------------------------------------------------------------------
 if "OPENAI_API_KEY" not in st.secrets:
     st.error("OpenAI API key not found in Streamlit secrets.")
     st.stop()
 
 api_key = st.secrets["OPENAI_API_KEY"]
+
+wrapper = DuckDuckGoSearchAPIWrapper(region="de-de", time="d", max_results=2)
+search = DuckDuckGoSearchResults(api_wrapper=wrapper, source="news")
 
 # ------------------------------------------------------------------------------
 # 2. Session State initialization
@@ -45,12 +49,10 @@ async def determine_companies(message: str, agent_number: int) -> List[str]:
     llm_instance = ChatOpenAI(temperature=0, model="gpt-4")
 
     template = f"""
-    Based on this user query, identify a list of up to {agent_number} diverse perspectives or roles
-    that could respond to the problem with different solutions. Or, if they ask the to argue over 
-    specified perspectives or items (e.g., if they ask you to argue over what item is best over a set 
-    of items, each agent should advocate for one of the items), use their specified items as the 
-    perspectives (e.g., if the user asks for a debate over which "x" is best, each different "x" should 
-    be a perspective). Return them as comma-separated values.
+    Identify a list of up to {agent_number} of perspectives or advocates that could respond to the user's 
+    problem or question with different solutions. If the user lists different perspectives or sides of an 
+    argument, only use their suggestions. If they do not, create them in a way that will foster a conversation 
+    between diverse perspectives. Return them as comma-separated values.
 
     User query: {message}
     """
@@ -66,7 +68,7 @@ async def generate_response(
     company: str,
     user_message: str,
     conversation_so_far: str,
-    other_agents_responses: str
+    all_perspectives: List[str]
 ) -> str:
     """
     Generates a short, informal, brainstorming-style response from the perspective of `company`.
@@ -74,20 +76,23 @@ async def generate_response(
     llm_instance = ChatOpenAI(temperature=0.7, model="gpt-4")
     template = """
     You're in a casual group brainstorming chat representing or in support of the perspective: {company}.
-    The user just said: {user_message}
+    The user just asked: {user_message}
     Entire conversation so far:
     {conversation_so_far}
 
-    Other participants' latest responses:
-    {other_agents_responses}
+    Other perspectives participating in this brainstorming session include: {all_perspectives}
+
+    If the user question or context requires external knowledge, indicate the need for a web search by saying 
+    "Searching Now..." and summarize your search findings. Otherwise: 
 
     Please reply briefly and informally, as if you're a professional brainstorming with friends in a group 
-    chat. It is meant to be  quick, collaborative brainstorm session with the user, where you create a single 
+    chat. It is meant to be a quick, collaborative brainstorm session with the user, where you create a single 
     idea for a feature or solution and briefly explain it as if it just "popped into your head." In other words, 
-    your response shouldn't be much longer than the question asked by the user.
+    your response shouldn't be much longer than the question asked by the user. Take note of the other perspectives
+    present, so you can try to differentiate your ideas from theirs.
     """
     prompt = PromptTemplate(
-        input_variables=["company", "user_message", "conversation_so_far", "other_agents_responses"],
+        input_variables=["company", "user_message", "conversation_so_far", "all_perspectives"],
         template=template
     )
 
@@ -97,35 +102,44 @@ async def generate_response(
         company=company,
         user_message=user_message,
         conversation_so_far=conversation_so_far,
-        other_agents_responses=other_agents_responses
+        all_perspectives=", ".join(all_perspectives)  # Join perspectives into a string
     )
+
+        # Check if the response indicates a search is needed
+    if "Searching Now..." in response and search_tool:
+        with st.spinner("Searching the Web"):
+            search_query = user_message  # Or extract a more specific query based on the response
+            search_results = search_tool.invoke(search_query)
+            
+            # Format search results and append them to the response
+            search_summary = "\n".join(f"- {result['title']}: {result['link']}" for result in search_results)
+            response = f"{response}\nSearch Results:\n{search_summary}"
+
     return response.strip()
 
 async def run_agents(
     companies: List[str],
     user_message: str,
-    conversation: List[Dict[str, str]]
+    conversation: List[Dict[str, str]],
+    search_tool: DuckDuckGoSearchAPIWrapper = None
 ) -> Dict[str, str]:
     """
-    Launch all perspectives concurrently. Each agent sees the entire conversation
-    plus the most recent user message.
+    Launch all perspectives concurrently. Each agent sees the entire conversation,
+    knows all other perspectives, and can use the search tool if needed.
     """
     # Convert the entire conversation into a string
     conversation_text = "\n".join(
         f"{msg['role'].upper()}: {msg['content']}" for msg in conversation
     )
 
-    # For simplicity, let's just feed the full conversation as "other_agents_responses" too.
-    # You could refine this if you want only the last round of messages.
-    other_agents_text = conversation_text
-
     tasks = []
     for company in companies:
         tasks.append(generate_response(
-            company,
-            user_message,
-            conversation_text,
-            other_agents_text
+            company=company,
+            user_message=user_message,
+            conversation_so_far=conversation_text,
+            all_perspectives=companies,  # Pass the full list of perspectives
+            search_tool=search_tool  # Pass the search tool to the agents
         ))
     results = await asyncio.gather(*tasks)
     return dict(zip(companies, results))
@@ -141,10 +155,19 @@ st.logo(
     size="large"
 )
 
-st.markdown("<h1 style='text-align: center;'><span style='color: white;'>Bias</span><span style='color: red;'>Bouncer</span></h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center;'><span style='color: red;'>BiasBouncer</span></h1>", unsafe_allow_html=True)
 st.markdown("<h3 style='text-align: center;'>Team WorkBench</h3>", unsafe_allow_html=True)
 
 st.divider()
+
+@st.dialog("How BiasBouncer Works")
+def explain():
+    st.divider()
+    st.write("Every idea begins to take shape with a Brainstorming session. Click the sidebar arrow at the top left-hand corner of the page. Ask a question or pitch your idea to BiasBouncer in the Brainstorm Chat. From there, BiasBouncer will explore the different perspectives needed to accurately address the complications of your idea. Each agent will respond to you casually, outlining their informed thoughts or spitballing new ideas. Keep brainstorming with your team the same way you would with your friends or work partners. When you have a plan put together, you can begin orchestrating your work.")
+    st.write("BiasBouncer will instruct agents to simultaneously perform different tasks like research, coding, reviewing, and more. Those tasks will populate in the 'To Do' column and gradually move to the right, so you can monitor their progress and review the task details. You can always chat with the agents if they have questions about their work or you want to add feedback. Once all the tasks have ended up in the 'Done' column, your finished project will be ready to download!")
+    st.caption("As of the last update on 1/22/2025, the Brainstorm Chat is currently operational and available. Team WorkBench functionality coming soon.")
+if st.button("How it Works", type="secondary"):
+    explain()
 
 col1, col2, col3, col4 = st.columns(4, border=True, gap="small")
 
@@ -158,7 +181,7 @@ with col1:
         st.write("Once your agents have created a plan in the Chat, the Tasks they'll work to complete will populate here. This is where you will be able to see the details of each task. If an agent has a question regarding their Task, they will ask you in the Chat.")
     if st.button("Task One", use_container_width=True, type="primary"):
         view()
-    
+        
     @st.dialog("Task Two")
     def view():
         st.html("<ul><li><h3>Agents: --</h3></li><li><h3>Tools: --</h3></li><li><h3>Description: --</h3></li><li><h3>Status: To Do</h3></li></ul>")
@@ -174,7 +197,7 @@ with col1:
         st.write("Once your agents have created a plan in the Chat, the Tasks they'll work to complete will populate here. This is where you will be able to see the details of each task. If an agent has a question regarding their Task, they will ask you in the Chat.")
     if st.button("Task Three", use_container_width=True, type="primary"):
         view()
-    
+        
     @st.dialog("Task Four")
     def view():
         st.html("<ul><li><h3>Agents: --</h3></li><li><h3>Tools: --</h3></li><li><h3>Description: --</h3></li><li><h3>Status: To Do</h3></li></ul>")
