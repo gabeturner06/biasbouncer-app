@@ -13,16 +13,13 @@ from langchain.chains import LLMChain
 st.set_page_config(layout="wide")
 
 # ------------------------------------------------------------------------------
-# 2. Access API Key(s) and WebSearch
+# 2. Access API Key(s)
 # ------------------------------------------------------------------------------
 if "OPENAI_API_KEY" not in st.secrets:
     st.error("OpenAI API key not found in Streamlit secrets.")
     st.stop()
 
 api_key = st.secrets["OPENAI_API_KEY"]
-
-wrapper = DuckDuckGoSearchAPIWrapper(region="de-de", time="d", max_results=2)
-search_tool = wrapper
 
 # ------------------------------------------------------------------------------
 # 2. Session State initialization
@@ -68,8 +65,7 @@ async def generate_response(
     company: str,
     user_message: str,
     conversation_so_far: str,
-    all_perspectives: List[str],
-    search_tool: DuckDuckGoSearchAPIWrapper = None  # Add search_tool as a parameter
+    all_perspectives: List[str]
 ) -> str:
     """
     Generates a short, informal, brainstorming-style response from the perspective of `company`.
@@ -82,9 +78,6 @@ async def generate_response(
     {conversation_so_far}
 
     Other perspectives participating in this brainstorming session include: {all_perspectives}
-
-    If the user question or context requires external knowledge, indicate the need for a web search by saying 
-    "Searching Now..." and summarize your search findings. Otherwise: 
 
     Please reply briefly and informally, as if you're a professional brainstorming with friends in a group 
     chat. It is meant to be a quick, collaborative brainstorm session with the user, where you create a single 
@@ -106,23 +99,12 @@ async def generate_response(
         all_perspectives=", ".join(all_perspectives)  # Join perspectives into a string
     )
 
-    # Check if the response indicates a search is needed
-    if "Searching Now..." in response and search_tool:
-        with st.spinner("Searching the Web"):
-            search_query = user_message  # Or extract a more specific query based on the response
-            search_results = search_tool.invoke(search_query)
-
-            # Format search results and append them to the response
-            search_summary = "\n".join(f"- {result['title']}: {result['link']}" for result in search_results)
-            response = f"{response}\nSearch Results:\n{search_summary}"
-
     return response.strip()
 
 async def run_agents(
     companies: List[str],
     user_message: str,
     conversation: List[Dict[str, str]],
-    search_tool: DuckDuckGoSearchAPIWrapper = None
 ) -> Dict[str, str]:
     """
     Launch all perspectives concurrently. Each agent sees the entire conversation,
@@ -140,7 +122,6 @@ async def run_agents(
             user_message=user_message,
             conversation_so_far=conversation_text,
             all_perspectives=companies,  # Pass the full list of perspectives
-            search_tool=search_tool  # Pass the search tool to the agents
         ))
     results = await asyncio.gather(*tasks)
     return dict(zip(companies, results))
