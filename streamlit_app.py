@@ -22,7 +22,7 @@ if "OPENAI_API_KEY" not in st.secrets:
 api_key = st.secrets["OPENAI_API_KEY"]
 
 wrapper = DuckDuckGoSearchAPIWrapper(region="de-de", time="d", max_results=2)
-search = DuckDuckGoSearchResults(api_wrapper=wrapper, source="news")
+search_tool = wrapper
 
 # ------------------------------------------------------------------------------
 # 2. Session State initialization
@@ -68,7 +68,8 @@ async def generate_response(
     company: str,
     user_message: str,
     conversation_so_far: str,
-    all_perspectives: List[str]
+    all_perspectives: List[str],
+    search_tool: DuckDuckGoSearchAPIWrapper = None  # Add search_tool as a parameter
 ) -> str:
     """
     Generates a short, informal, brainstorming-style response from the perspective of `company`.
@@ -105,12 +106,12 @@ async def generate_response(
         all_perspectives=", ".join(all_perspectives)  # Join perspectives into a string
     )
 
-        # Check if the response indicates a search is needed
+    # Check if the response indicates a search is needed
     if "Searching Now..." in response and search_tool:
         with st.spinner("Searching the Web"):
             search_query = user_message  # Or extract a more specific query based on the response
             search_results = search_tool.invoke(search_query)
-            
+
             # Format search results and append them to the response
             search_summary = "\n".join(f"- {result['title']}: {result['link']}" for result in search_results)
             response = f"{response}\nSearch Results:\n{search_summary}"
