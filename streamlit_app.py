@@ -64,7 +64,7 @@ async def generate_response(
     company: str,
     user_message: str,
     conversation_so_far: str,
-    other_agents_responses: str
+    all_perspectives: List[str]
 ) -> str:
     """
     Generates a short, informal, brainstorming-style response from the perspective of `company`.
@@ -76,16 +76,15 @@ async def generate_response(
     Entire conversation so far:
     {conversation_so_far}
 
-    Other participants' latest responses:
-    {other_agents_responses}
+    Other perspectives participating in this brainstorming session include: {all_perspectives}
 
     Please reply briefly and informally, as if you're a professional brainstorming with friends in a group 
-    chat. It is meant to be  quick, collaborative brainstorm session with the user, where you create a single 
+    chat. It is meant to be a quick, collaborative brainstorm session with the user, where you create a single 
     idea for a feature or solution and briefly explain it as if it just "popped into your head." In other words, 
     your response shouldn't be much longer than the question asked by the user.
     """
     prompt = PromptTemplate(
-        input_variables=["company", "user_message", "conversation_so_far", "other_agents_responses"],
+        input_variables=["company", "user_message", "conversation_so_far", "all_perspectives"],
         template=template
     )
 
@@ -95,7 +94,7 @@ async def generate_response(
         company=company,
         user_message=user_message,
         conversation_so_far=conversation_so_far,
-        other_agents_responses=other_agents_responses
+        all_perspectives=", ".join(all_perspectives)  # Join perspectives into a string
     )
     return response.strip()
 
@@ -106,24 +105,20 @@ async def run_agents(
 ) -> Dict[str, str]:
     """
     Launch all perspectives concurrently. Each agent sees the entire conversation
-    plus the most recent user message.
+    plus the most recent user message. They also know about all perspectives involved.
     """
     # Convert the entire conversation into a string
     conversation_text = "\n".join(
         f"{msg['role'].upper()}: {msg['content']}" for msg in conversation
     )
 
-    # For simplicity, let's just feed the full conversation as "other_agents_responses" too.
-    # You could refine this if you want only the last round of messages.
-    other_agents_text = conversation_text
-
     tasks = []
     for company in companies:
         tasks.append(generate_response(
-            company,
-            user_message,
-            conversation_text,
-            other_agents_text
+            company=company,
+            user_message=user_message,
+            conversation_so_far=conversation_text,
+            all_perspectives=companies  # Pass the full list of perspectives
         ))
     results = await asyncio.gather(*tasks)
     return dict(zip(companies, results))
