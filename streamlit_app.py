@@ -3,6 +3,7 @@ import streamlit as st
 from typing import List, Dict
 
 from langchain_community.chat_models.openai import ChatOpenAI
+from langchain_community.utilities import DuckDuckGoSearchAPIWrapper
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
 
@@ -12,13 +13,16 @@ from langchain.chains import LLMChain
 st.set_page_config(layout="wide")
 
 # ------------------------------------------------------------------------------
-# 2. Access API Key from Streamlit secrets
+# 2. Access API Key(s) and WebSearch
 # ------------------------------------------------------------------------------
 if "OPENAI_API_KEY" not in st.secrets:
     st.error("OpenAI API key not found in Streamlit secrets.")
     st.stop()
 
 api_key = st.secrets["OPENAI_API_KEY"]
+
+wrapper = DuckDuckGoSearchAPIWrapper(region="de-de", time="d", max_results=2)
+search = DuckDuckGoSearchResults(api_wrapper=wrapper, source="news")
 
 # ------------------------------------------------------------------------------
 # 2. Session State initialization
@@ -78,10 +82,14 @@ async def generate_response(
 
     Other perspectives participating in this brainstorming session include: {all_perspectives}
 
+    If the user question or context requires external knowledge, indicate the need for a web search by saying 
+    "Searching Now..." and summarize your search findings. Otherwise: 
+
     Please reply briefly and informally, as if you're a professional brainstorming with friends in a group 
     chat. It is meant to be a quick, collaborative brainstorm session with the user, where you create a single 
     idea for a feature or solution and briefly explain it as if it just "popped into your head." In other words, 
-    your response shouldn't be much longer than the question asked by the user.
+    your response shouldn't be much longer than the question asked by the user. Take note of the other perspectives
+    present, so you can try to differentiate your ideas from theirs.
     """
     prompt = PromptTemplate(
         input_variables=["company", "user_message", "conversation_so_far", "all_perspectives"],
@@ -96,16 +104,28 @@ async def generate_response(
         conversation_so_far=conversation_so_far,
         all_perspectives=", ".join(all_perspectives)  # Join perspectives into a string
     )
+
+        # Check if the response indicates a search is needed
+    if "Searching Now..." in response and search_tool:
+        with st.spinner("Searching the Web"):
+            search_query = user_message  # Or extract a more specific query based on the response
+            search_results = search_tool.invoke(search_query)
+            
+            # Format search results and append them to the response
+            search_summary = "\n".join(f"- {result['title']}: {result['link']}" for result in search_results)
+            response = f"{response}\nSearch Results:\n{search_summary}"
+
     return response.strip()
 
 async def run_agents(
     companies: List[str],
     user_message: str,
-    conversation: List[Dict[str, str]]
+    conversation: List[Dict[str, str]],
+    search_tool: DuckDuckGoSearchAPIWrapper = None
 ) -> Dict[str, str]:
     """
-    Launch all perspectives concurrently. Each agent sees the entire conversation
-    plus the most recent user message. They also know about all perspectives involved.
+    Launch all perspectives concurrently. Each agent sees the entire conversation,
+    knows all other perspectives, and can use the search tool if needed.
     """
     # Convert the entire conversation into a string
     conversation_text = "\n".join(
@@ -118,7 +138,8 @@ async def run_agents(
             company=company,
             user_message=user_message,
             conversation_so_far=conversation_text,
-            all_perspectives=companies  # Pass the full list of perspectives
+            all_perspectives=companies,  # Pass the full list of perspectives
+            search_tool=search_tool  # Pass the search tool to the agents
         ))
     results = await asyncio.gather(*tasks)
     return dict(zip(companies, results))
