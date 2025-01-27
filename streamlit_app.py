@@ -3,7 +3,6 @@ import streamlit as st
 from typing import List, Dict
 
 from langchain_community.chat_models.openai import ChatOpenAI
-from langchain_community.utilities import DuckDuckGoSearchAPIWrapper
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
 
@@ -26,7 +25,7 @@ api_key = st.secrets["OPENAI_API_KEY"]
 # ------------------------------------------------------------------------------
 if "chat_history" not in st.session_state:
     # We'll store conversation messages here in the format:
-    # {"role": "user" OR "<company_name>", "content": "..."}
+    # {"role": "user" OR "<company_name>", "content": "..."}opp
     st.session_state["chat_history"] = []
 
 if "companies" not in st.session_state:

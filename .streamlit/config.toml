@@ -1,0 +1,35 @@
+[logger]
+
+# Level of logging for Streamlit's internal logger: "error", "warning",
+# "info", or "debug".
+# Default: "info"
+level = "info"
+
+# String format for logging messages. If logger.datetimeFormat is set,
+# logger messages will default to `%(asctime)s.%(msecs)03d %(message)s`. See
+# Python's documentation for available attributes:
+# https://docs.python.org/3/library/logging.html#formatter-objects
+# Default: "%(asctime)s %(message)s"
+messageFormat = "%(asctime)s %(message)s"
+
+[theme]
+
+# The preset Streamlit theme that your custom theme inherits from.
+# One of "light" or "dark".
+base = dark
+
+# Primary accent color for interactive elements.
+primaryColor =
+
+# Background color for the main content area.
+backgroundColor =
+
+# Background color used for the sidebar and most interactive widgets.
+secondaryBackgroundColor =
+
+# Color used for almost all text.
+textColor =
+
+# Font family for all text in the app, except code blocks. One of "sans serif",
+# "serif", or "monospace".
+font =
