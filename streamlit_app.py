@@ -97,7 +97,7 @@ async def generate_response(
     {{
         "tool": "read" or "write",
         "filename": "path/to/file",
-        "content": "content-to-write" (only include if using 'write')
+        "content": "(Your agent name): content-to-write" (only include if using 'write')
     }}
     ```
 
