@@ -11,7 +11,7 @@ async def read_tool(filename: str) -> str:
     Returns:
         str: Content of the file or error message
     """
-    path = f"/Users/gabrielryanturner/Documents/Source/archive/biasbouncer-auto-gpt/backup/{filename}"
+    path = f"/{filename}"
     try:
         async with aiofiles.open(path, mode="r") as file:
             content = await file.read()
