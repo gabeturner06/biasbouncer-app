@@ -1,10 +1,15 @@
-import asyncio
 import streamlit as st
-from typing import List, Dict
-
-from langchain_community.chat_models.openai import ChatOpenAI
+import asyncio
+import re
+import json
+from dotenv import load_dotenv
+from typing import List, Dict, Callable
+from langchain.chat_models.openai import ChatOpenAI
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
+
+# Import tools from the new module
+from biasbouncer.tools.file_tools import read_tool, write_tool, process_tool_invocation
 
 # ------------------------------------------------------------------------------
 # 1. Configure page layout
@@ -33,9 +38,9 @@ if "companies" not in st.session_state:
     st.session_state["companies"] = []
 
 llm = ChatOpenAI(temperature=0)  # Base LLM (not used directly below but you can adapt)
-
+    
 # ------------------------------------------------------------------------------
-# 4. Functions from the multi-agent approach
+# 5. Multi-Agent Creation System
 # ------------------------------------------------------------------------------
 
 async def determine_companies(message: str, agent_number: int) -> List[str]:
@@ -64,7 +69,9 @@ async def generate_response(
     company: str,
     user_message: str,
     conversation_so_far: str,
-    all_perspectives: List[str]
+    all_perspectives: List[str],
+    read_tool: Callable = None,  # Injected read function
+    write_tool: Callable = None  # Injected write function
 ) -> str:
     """
     Generates a short, informal, brainstorming-style response from the perspective of `company`.
@@ -83,7 +90,20 @@ async def generate_response(
     idea for a feature or solution and briefly explain it as if it just "popped into your head." In other words, 
     your response shouldn't be much longer than the question asked by the user. Take note of the other perspectives
     present, so you can try to differentiate your ideas from theirs.
+
+    Additionally, if you need to read or write to a file, include a JSON block in your response in the following format:
+
+    ```json
+    {{
+        "tool": "read" or "write",
+        "filename": "path/to/file",
+        "content": "content-to-write" (only include if using 'write')
+    }}
+    ```
+
+    If no tool is needed, do not include the JSON block.
     """
+
     prompt = PromptTemplate(
         input_variables=["company", "user_message", "conversation_so_far", "all_perspectives"],
         template=template
@@ -98,43 +118,54 @@ async def generate_response(
         all_perspectives=", ".join(all_perspectives)  # Join perspectives into a string
     )
 
+    # Check for JSON in the response
+    json_match = re.search(r"```json\n(.*?)\n```", response, re.DOTALL)
+    if json_match:
+        try:
+            tool_data = json.loads(json_match.group(1))
+            if tool_data["tool"] == "read" and read_tool:
+                filename = tool_data["filename"]
+                read_data = await read_tool(filename)
+                return f"{response}\n\n[Tool Output]: {read_data}"
+
+            elif tool_data["tool"] == "write" and write_tool:
+                filename = tool_data["filename"]
+                content = tool_data["content"]
+                write_result = await write_tool(filename, content)
+                return f"{response}\n\n[Tool Output]: {write_result}"
+        except (json.JSONDecodeError, KeyError):
+            return f"Error parsing JSON tool invocation in the response:\n{response}"
+
     return response.strip()
 
 async def run_agents(
     companies: List[str],
     user_message: str,
     conversation: List[Dict[str, str]],
+    read_tool: Callable = read_tool,
+    write_tool: Callable =write_tool
 ) -> Dict[str, str]:
-    """
-    Launch all perspectives concurrently. Each agent sees the entire conversation,
-    knows all other perspectives, and can use the search tool if needed.
-    """
-    # Convert the entire conversation into a string
     conversation_text = "\n".join(
         f"{msg['role'].upper()}: {msg['content']}" for msg in conversation
     )
 
-    tasks = []
-    for company in companies:
-        tasks.append(generate_response(
+    tasks = [
+        generate_response(
             company=company,
             user_message=user_message,
             conversation_so_far=conversation_text,
-            all_perspectives=companies,  # Pass the full list of perspectives
-        ))
+            all_perspectives=companies,  # Pass all companies as context
+            read_tool=read_tool,
+            write_tool=write_tool
+        )
+        for company in companies
+    ]
     results = await asyncio.gather(*tasks)
     return dict(zip(companies, results))
 
 # ------------------------------------------------------------------------------
-# 5. Main Page Layout (Preserve old style)
+# 6. Main Page Layout
 # ------------------------------------------------------------------------------
-LOGO_URL_LARGE = "images/biasbouncer-logo.png"
-
-st.logo(
-    image=LOGO_URL_LARGE,
-    link="https://biasbouncer.com",
-    size="large"
-)
 
 st.markdown("<h1 style='text-align: center;'><span style='color: red;'>BiasBouncer</span></h1>", unsafe_allow_html=True)
 st.markdown("<h3 style='text-align: center;'>Team WorkBench</h3>", unsafe_allow_html=True)
@@ -200,7 +231,7 @@ with col4:
     st.markdown("##")
 
 # ------------------------------------------------------------------------------
-# 6. Sidebar Chat
+# 7. Sidebar Chat
 # ------------------------------------------------------------------------------
 with st.sidebar:
     st.title("Brainstorm Chat")
