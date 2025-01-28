@@ -89,7 +89,7 @@ async def generate_response(
     chat. It is meant to be a quick, collaborative brainstorm session with the user, where you create a single 
     idea for a feature or solution and briefly explain it as if it just "popped into your head." In other words, 
     your response shouldn't be much longer than the question asked by the user. Take note of the other perspectives
-    present, so you can try to differentiate your ideas from theirs. Remind the user briefly that you can create
+    present, so you can try to differentiate your ideas from theirs. When you begin, remind the user briefly that you can create
     files to store important information.
 
     Additionally, if you need to read or write to a file, include a JSON block in your response in the following format:
