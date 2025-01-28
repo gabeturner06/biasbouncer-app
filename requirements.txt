@@ -2,3 +2,4 @@ streamlit
 langchain-community
 openai
 chromadb
+aiofiles
