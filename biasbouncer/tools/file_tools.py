@@ -2,6 +2,7 @@ import tempfile
 import aiofiles
 import os
 import json
+import uuid
 import streamlit as st
 
 def delete_all_files():
@@ -17,10 +18,13 @@ def get_app_temp_dir():
     os.makedirs(app_temp_dir, exist_ok=True)  # Ensure the directory exists
     return app_temp_dir
 
-# Function to list available temporary files
+# Ensure each session gets a unique temp directory
+if "temp_dir" not in st.session_state:
+    st.session_state["temp_dir"] = tempfile.mkdtemp(prefix="biasbouncer_")
+
+# Function to list files in the session's temp directory
 def list_files():
-    app_temp_dir = get_app_temp_dir()
-    return [f for f in os.listdir(app_temp_dir) if os.path.isfile(os.path.join(app_temp_dir, f))]
+    return [f for f in os.listdir(st.session_state["temp_dir"])]
 
 # Function to write a file and trigger UI update
 async def write_tool(filename: str, content: str):
