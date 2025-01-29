@@ -89,10 +89,10 @@ async def generate_response(
     chat. It is meant to be a quick, collaborative brainstorm session with the user, where you create a single 
     idea for a feature or solution and briefly explain it as if it just "popped into your head." In other words, 
     your response shouldn't be much longer than the question asked by the user. Take note of the other perspectives
-    present, so you can try to differentiate your ideas from theirs. When you begin, remind the user briefly that you can create
-    files to store important information.
+    present, so you can try to differentiate your ideas from theirs. 
 
-    Additionally, if you need to read or write to a file, include a JSON block in your response in the following format:
+    Additionally, if the user asks you to read or write to a file, include a JSON block in your response in the 
+    following format:
 
     ```json
     {{
@@ -102,7 +102,8 @@ async def generate_response(
     }}
     ```
 
-    If no tool is needed, do not include the JSON block.
+    If no tool is needed, do not include the JSON block. Only create .txt files and only create them when
+    the user asks you to.
     """
 
     prompt = PromptTemplate(
