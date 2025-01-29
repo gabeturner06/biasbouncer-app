@@ -9,7 +9,7 @@ from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
 
 # Import tools from the new module
-from biasbouncer.tools.file_tools import read_tool, write_tool
+from biasbouncer.tools.file_tools import read_tool, write_tool, list_files
 
 # ------------------------------------------------------------------------------
 # 1. Configure page layout
