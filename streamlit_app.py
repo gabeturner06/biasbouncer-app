@@ -259,7 +259,7 @@ with col1:
         if st.button("View File", use_container_width=True, type="secondary"):
             view_file()
     else:
-        st.write("No temporary files available.")
+        st.write("No files created.")
 
 # ------------------------------------------------------------------------------
 # 7. Sidebar Chat
