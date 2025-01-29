@@ -168,14 +168,6 @@ async def run_agents(
 # 6. Main Page Layout
 # ------------------------------------------------------------------------------
 
-LOGO_URL_LARGE = "biasbouncer/images/biasbouncer-logo.png"
-
-st.logo(
-    image=LOGO_URL_LARGE,
-    link="https://biasbouncer.com",
-    size="large"
-)
-
 st.markdown("<h1 style='text-align: center;'><span style='color: red;'>BiasBouncer</span></h1>", unsafe_allow_html=True)
 st.markdown("<h3 style='text-align: center;'>Team WorkBench</h3>", unsafe_allow_html=True)
 
@@ -238,6 +230,35 @@ with col3:
 with col4:
     st.subheader("Done")
     st.markdown("##")
+
+st.divider()
+
+st.subheader("Agent Files")
+
+# Buttons for refreshing and deleting all files
+col1, col2 = st.columns([0.4, 0.6])
+
+with col1:
+    if st.button("Refresh Files", use_container_width=True):
+        st.rerun()
+
+    files = list_files()
+
+    if files:
+        selected_file = st.selectbox("Select a file:", files)
+
+        # Define the modal for viewing file content
+        @st.dialog(f"{selected_file}")
+        def view_file():
+            with st.spinner("Reading file..."):
+                file_content = asyncio.run(read_tool(selected_file))
+            
+            st.text_area("File Content", file_content, height=400)
+
+        if st.button("View File", use_container_width=True, type="secondary"):
+            view_file()
+    else:
+        st.write("No temporary files available.")
 
 # ------------------------------------------------------------------------------
 # 7. Sidebar Chat

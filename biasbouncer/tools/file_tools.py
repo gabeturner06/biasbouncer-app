@@ -2,32 +2,47 @@ import tempfile
 import aiofiles
 import os
 import json
+import streamlit as st
 
-async def write_tool(filename: str, content: str) -> str:
-    """
-    Writes content to a named temporary file or appends to an existing one in the temp directory.
-    """
+def delete_all_files():
+    temp_dir = tempfile.gettempdir()
+    files = list_files()
+    for file in files:
+        file_path = os.path.join(temp_dir, file)
+        os.remove(file_path)
+
+def get_app_temp_dir():
+    temp_dir = tempfile.gettempdir()
+    app_temp_dir = os.path.join(temp_dir, "biasbouncer")
+    os.makedirs(app_temp_dir, exist_ok=True)  # Ensure the directory exists
+    return app_temp_dir
+
+# Function to list available temporary files
+def list_files():
+    app_temp_dir = get_app_temp_dir()
+    return [f for f in os.listdir(app_temp_dir) if os.path.isfile(os.path.join(app_temp_dir, f))]
+
+# Function to write a file and trigger UI update
+async def write_tool(filename: str, content: str):
     try:
-        # Ensure the file is stored in the system's temp directory
-        temp_dir = tempfile.gettempdir()
+        temp_dir = get_app_temp_dir()
         temp_file_path = os.path.join(temp_dir, filename)
-
-        # Open the file in append mode or create it if it doesn't exist
+        
         mode = 'a' if os.path.exists(temp_file_path) else 'w'
         async with aiofiles.open(temp_file_path, mode=mode) as file:
-            await file.write(content + '\n')  # Append content with a newline
-        
-        return f"Successfully wrote to temporary file '{temp_file_path}'."
+            await file.write(content + '\n')
+
+        # Trigger UI refresh by setting session state
+        st.session_state["file_updated"] = True
+
+        return f"Successfully wrote to '{temp_file_path}'."
     except Exception as e:
         return f"Error writing to temporary file: {str(e)}"
 
-async def read_tool(filename: str) -> str:
-    """
-    Reads content from a named temporary file in the temp directory.
-    """
+# Function to read a file
+async def read_tool(filename: str):
     try:
-        # Ensure the file is in the system's temp directory
-        temp_dir = tempfile.gettempdir()
+        temp_dir = get_app_temp_dir()
         temp_file_path = os.path.join(temp_dir, filename)
 
         if os.path.exists(temp_file_path):
@@ -38,9 +53,6 @@ async def read_tool(filename: str) -> str:
             return f"Error: Temporary file '{temp_file_path}' does not exist."
     except Exception as e:
         return f"Error reading from temporary file: {str(e)}"
-
-
-import json
 
 async def process_tool_invocation_temp(tool_json: str) -> str:
     """
