@@ -2,8 +2,12 @@ import tempfile
 import aiofiles
 import os
 import json
-import uuid
+from langchain_community.utilities import DuckDuckGoSearchAPIWrapper, DuckDuckGoSearchResults
 import streamlit as st
+
+
+wrapper = DuckDuckGoSearchAPIWrapper(region="us-en", time="d", max_results=2)
+search_tool = DuckDuckGoSearchResults(api_wrapper=wrapper, source="news")
 
 # Ensure session state has a temp directory
 def ensure_temp_dir():
@@ -16,11 +20,15 @@ def list_files():
     temp_dir = ensure_temp_dir()  # Ensure temp directory is initialized
     return os.listdir(temp_dir)
 
-# Function to delete all files in the session's temp directory
-def delete_all_files():
-    temp_dir = ensure_temp_dir()
-    for file in os.listdir(temp_dir):
-        os.remove(os.path.join(temp_dir, file))
+async def research_tool(query: str) -> str:
+    """
+    Calls the DuckDuckGo search API and returns summarized results.
+    """
+    try:
+        results = search_tool.invoke(query)
+        return "\n".join([result["content"] for result in results])
+    except Exception as e:
+        return f"Error fetching search results: {str(e)}"
 
 # Function to write a file and trigger UI update
 async def write_tool(filename: str, content: str):

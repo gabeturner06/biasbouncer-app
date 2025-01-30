@@ -9,7 +9,7 @@ from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
 
 # Import tools from the new module
-from biasbouncer.tools.file_tools import read_tool, write_tool, list_files
+from biasbouncer.tools.file_tools import read_tool, write_tool, list_files, research_tool
 
 # ------------------------------------------------------------------------------
 # 1. Configure page layout
@@ -70,13 +70,15 @@ async def generate_response(
     user_message: str,
     conversation_so_far: str,
     all_perspectives: List[str],
-    read_tool: Callable = None,  # Injected read function
-    write_tool: Callable = None  # Injected write function
+    read_tool: Callable = None,
+    write_tool: Callable = None,
+    research_tool: Callable = None
 ) -> str:
     """
     Generates a short, informal, brainstorming-style response from the perspective of `company`.
     """
     llm_instance = ChatOpenAI(temperature=0.7, model="gpt-4")
+
     template = """
     You're in a casual group brainstorming chat representing or in support of the perspective: {company}.
     The user just asked: {user_message}
@@ -89,21 +91,20 @@ async def generate_response(
     chat. It is meant to be a quick, collaborative brainstorm session with the user, where you create a single 
     idea for a feature or solution and briefly explain it as if it just "popped into your head." In other words, 
     your response shouldn't be much longer than the question asked by the user. Take note of the other perspectives
-    present, so you can try to differentiate your ideas from theirs. 
+    present, so you can try to differentiate your ideas from theirs.
 
-    Additionally, if the user asks you to read or write to a file, include a JSON block in your response in the 
-    following format:
+    If you need to read, write, or research something online, include a JSON block in your response in the following format:
 
     ```json
     {{
-        "tool": "read" or "write",
-        "filename": "path/to/file",
-        "content": "(Your agent name): content-to-write" (only include if using 'write')
+        "tool": "read" or "write" or "research",
+        "filename": "path/to/file" (only for read/write),
+        "content": "(Your agent name): content-to-write" (only for 'write'),
+        "query": "search query here" (only for 'research')
     }}
     ```
 
-    If no tool is needed, do not include the JSON block. Only create .txt files and only create them when
-    the user asks you to.
+    If no tool is needed, do not include the JSON block. You can create .txt or .md files. If they are .md, format the content accordingly.
     """
 
     prompt = PromptTemplate(
@@ -117,35 +118,73 @@ async def generate_response(
         company=company,
         user_message=user_message,
         conversation_so_far=conversation_so_far,
-        all_perspectives=", ".join(all_perspectives)  # Join perspectives into a string
+        all_perspectives=", ".join(all_perspectives)
     )
 
-    # Check for JSON in the response
+    # Check for JSON tool requests
     json_match = re.search(r"```json\n(.*?)\n```", response, re.DOTALL)
     if json_match:
         try:
             tool_data = json.loads(json_match.group(1))
+
+            # Handle file reading
             if tool_data["tool"] == "read" and read_tool:
                 filename = tool_data["filename"]
                 read_data = await read_tool(filename)
-                return f"{response}\n\n[Tool Output]: {read_data}"
 
+                # Modify conversation history to include file content
+                updated_conversation = conversation_so_far + f"\n\n[File '{filename}' was read and contained:]\n{read_data}"
+
+                # Rerun the agent with the new context
+                second_response = await asyncio.to_thread(
+                    chain.run,
+                    company=company,
+                    user_message=user_message,
+                    conversation_so_far=updated_conversation,
+                    all_perspectives=", ".join(all_perspectives)
+                )
+
+                return second_response
+
+            # Handle file writing
             elif tool_data["tool"] == "write" and write_tool:
                 filename = tool_data["filename"]
                 content = tool_data["content"]
                 write_result = await write_tool(filename, content)
                 return f"{response}\n\n[Tool Output]: {write_result}"
+
+            # Handle web research
+            elif tool_data["tool"] == "research" and research_tool:
+                query = tool_data["query"]
+                search_results = await research_tool(query)
+
+                # Modify conversation history to include research results
+                updated_conversation = conversation_so_far + f"\n\n[Research on '{query}':]\n{search_results}"
+
+                # Rerun the agent with new knowledge
+                second_response = await asyncio.to_thread(
+                    chain.run,
+                    company=company,
+                    user_message=user_message,
+                    conversation_so_far=updated_conversation,
+                    all_perspectives=", ".join(all_perspectives)
+                )
+
+                return second_response
+
         except (json.JSONDecodeError, KeyError):
             return f"Error parsing JSON tool invocation in the response:\n{response}"
 
     return response.strip()
+
 
 async def run_agents(
     companies: List[str],
     user_message: str,
     conversation: List[Dict[str, str]],
     read_tool: Callable = read_tool,
-    write_tool: Callable =write_tool
+    write_tool: Callable = write_tool,
+    research_tool: Callable = research_tool
 ) -> Dict[str, str]:
     conversation_text = "\n".join(
         f"{msg['role'].upper()}: {msg['content']}" for msg in conversation
@@ -156,14 +195,16 @@ async def run_agents(
             company=company,
             user_message=user_message,
             conversation_so_far=conversation_text,
-            all_perspectives=companies,  # Pass all companies as context
+            all_perspectives=companies,
             read_tool=read_tool,
-            write_tool=write_tool
+            write_tool=write_tool,
+            research_tool=research_tool
         )
         for company in companies
     ]
     results = await asyncio.gather(*tasks)
     return dict(zip(companies, results))
+
 
 # ------------------------------------------------------------------------------
 # 6. Main Page Layout

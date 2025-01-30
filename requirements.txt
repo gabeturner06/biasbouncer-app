@@ -3,3 +3,4 @@ langchain-community
 openai
 chromadb
 aiofiles
+duckduckgo-search
