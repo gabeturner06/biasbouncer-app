@@ -2,12 +2,11 @@ import tempfile
 import aiofiles
 import os
 import json
-from langchain_community.utilities import DuckDuckGoSearchAPIWrapper, DuckDuckGoSearchResults
+from langchain_community.tools import DuckDuckGoSearchRun
 import streamlit as st
 
 
-wrapper = DuckDuckGoSearchAPIWrapper(region="us-en", time="d", max_results=2)
-search_tool = DuckDuckGoSearchResults(api_wrapper=wrapper, source="news")
+search_tool = DuckDuckGoSearchRun()
 
 # Ensure session state has a temp directory
 def ensure_temp_dir():
