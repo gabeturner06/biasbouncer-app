@@ -129,48 +129,51 @@ async def generate_response(
 
             # Handle file reading
             if tool_data["tool"] == "read" and read_tool:
-                filename = tool_data["filename"]
-                read_data = await read_tool(filename)
+                with st.spinner("Reading Files"):
+                    filename = tool_data["filename"]
+                    read_data = await read_tool(filename)
 
-                # Modify conversation history to include file content
-                updated_conversation = conversation_so_far + f"\n\n[File '{filename}' was read and contained:]\n{read_data}"
+                    # Modify conversation history to include file content
+                    updated_conversation = conversation_so_far + f"\n\n[File '{filename}' was read and contained:]\n{read_data}"
 
-                # Rerun the agent with the new context
-                second_response = await asyncio.to_thread(
-                    chain.run,
-                    company=company,
-                    user_message=user_message,
-                    conversation_so_far=updated_conversation,
-                    all_perspectives=", ".join(all_perspectives)
-                )
+                    # Rerun the agent with the new context
+                    second_response = await asyncio.to_thread(
+                        chain.run,
+                        company=company,
+                        user_message=user_message,
+                        conversation_so_far=updated_conversation,
+                        all_perspectives=", ".join(all_perspectives)
+                    )
 
-                return second_response
+                    return second_response
 
             # Handle file writing
             elif tool_data["tool"] == "write" and write_tool:
-                filename = tool_data["filename"]
-                content = tool_data["content"]
-                write_result = await write_tool(filename, content)
-                return f"{response}\n\n[Tool Output]: {write_result}"
+                with st.spinner("Writing to File"):
+                    filename = tool_data["filename"]
+                    content = tool_data["content"]
+                    write_result = await write_tool(filename, content)
+                    return f"{response}\n\n[Tool Output]: {write_result}"
 
             # Handle web research
             elif tool_data["tool"] == "research" and research_tool:
-                query = tool_data["query"]
-                search_results = await research_tool(query)
+                with st.spinner("Searching the Web"):
+                    query = tool_data["query"]
+                    search_results = await research_tool(query)
 
-                # Modify conversation history to include research results
-                updated_conversation = conversation_so_far + f"\n\n[Research on '{query}':]\n{search_results}"
+                    # Modify conversation history to include research results
+                    updated_conversation = conversation_so_far + f"\n\n[Research on '{query}':]\n{search_results}"
 
-                # Rerun the agent with new knowledge
-                second_response = await asyncio.to_thread(
-                    chain.run,
-                    company=company,
-                    user_message=user_message,
-                    conversation_so_far=updated_conversation,
-                    all_perspectives=", ".join(all_perspectives)
-                )
+                    # Rerun the agent with new knowledge
+                    second_response = await asyncio.to_thread(
+                        chain.run,
+                        company=company,
+                        user_message=user_message,
+                        conversation_so_far=updated_conversation,
+                        all_perspectives=", ".join(all_perspectives)
+                    )
 
-                return second_response
+                    return second_response
 
         except (json.JSONDecodeError, KeyError):
             return f"Error parsing JSON tool invocation in the response:\n{response}"
@@ -228,7 +231,7 @@ def explain():
     st.divider()
     st.write("Every idea begins to take shape with a Brainstorming session. Click the sidebar arrow at the top left-hand corner of the page. Ask a question or pitch your idea to BiasBouncer in the Brainstorm Chat. From there, BiasBouncer will explore the different perspectives needed to accurately address the complications of your idea. Each agent will respond to you casually, outlining their informed thoughts or spitballing new ideas. Keep brainstorming with your team the same way you would with your friends or work partners. You can also create files in the chat to store your ideas. When you have a plan put together, you can begin orchestrating your work.")
     st.write("BiasBouncer will instruct agents to simultaneously perform different tasks like research, coding, reviewing, and more. Those tasks will populate in the 'To Do' column and gradually move to the right, so you can monitor their progress and review the task details. You can always chat with the agents if they have questions about their work or you want to add feedback. Once all the tasks have ended up in the 'Done' column, your finished project will be ready to download!")
-    st.caption("As of the last update on 1/29/2025, the Brainstorm Chat and file-creation are currently operational and available. Team WorkBench functionality coming soon.")
+    st.caption("As of the last update on 1/30/2025, the Brainstorm Chat with file-creation and web research capabilities are currently operational and available. Team WorkBench functionality coming soon.")
 if st.button("How it Works", type="secondary"):
     explain()
 
