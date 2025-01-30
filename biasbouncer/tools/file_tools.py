@@ -24,8 +24,8 @@ async def research_tool(query: str) -> str:
     Calls the DuckDuckGo search API and returns summarized results.
     """
     try:
-        results = search_tool.invoke(query)
-        return "\n".join([result["content"] for result in results])
+        results = search_tool.run(query)  # Use .run() instead of .invoke()
+        return results  # Directly return the search results string
     except Exception as e:
         return f"Error fetching search results: {str(e)}"
 
