@@ -104,7 +104,7 @@ async def generate_response(
     }}
     ```
 
-    If no tool is needed, do not include the JSON block. You can create .txt or .md files. If they are .md, format the content accordingly.
+    If no tool is needed, do not include the JSON block. You can only create .txt files, and ONLY create them when told to.
     """
 
     prompt = PromptTemplate(
