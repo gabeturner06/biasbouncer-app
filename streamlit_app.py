@@ -105,6 +105,7 @@ async def generate_response(
     ```
 
     If no tool is needed, do not include the JSON block. You can only create .txt files, and ONLY create them when told to.
+    You can ONLY use one tool per response, so only ever use one tool at a time.
     """
 
     prompt = PromptTemplate(
