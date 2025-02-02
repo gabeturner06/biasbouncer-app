@@ -289,7 +289,6 @@ st.divider()
 
 st.subheader("Agent Files")
 
-# Buttons for refreshing and deleting all files
 col1, col2 = st.columns([0.4, 0.6])
 
 with col1:
@@ -308,6 +307,14 @@ with col1:
                 file_content = asyncio.run(read_tool(selected_file))
             
             st.text_area("File Content", file_content, height=400)
+
+            # Add a download button
+            st.download_button(
+                label="Download File",
+                data=file_content,  # File content as data
+                file_name=selected_file,  # Keep the original filename
+                mime="text/plain",  # Set appropriate MIME type
+            )
 
         if st.button("View File", use_container_width=True, type="secondary"):
             view_file()
