@@ -79,24 +79,33 @@ async def generate_response(
     llm_instance = ChatOpenAI(temperature=0.7, model="gpt-4")
 
     template = """
-    You're in a casual group brainstorming chat for {company}. The user just asked: {user_message}
-    Conversation so far: {conversation_so_far}
-    Other perspectives: {all_perspectives}
+    You're in a casual group brainstorming chat representing or in support of the perspective: {company}.
+    The user just asked: {user_message}
+    Entire conversation so far:
+    {conversation_so_far}
 
-    Reply briefly and informally—as if you're a pro brainstorming with friends. Share a single, quick idea for a feature or solution 
-    (not much longer than the user's question) that stands out from the others.
+    Other perspectives participating in this brainstorming session include: {all_perspectives}
 
-    If you re asked to or absolutely need to read, write, or research online, include a JSON block like this:
+    Please reply briefly and informally, as if you're a professional brainstorming with friends in a group 
+    chat. It is meant to be a quick, collaborative brainstorm session with the user, where you create a single 
+    idea for a feature or solution and briefly explain it as if it just "popped into your head." In other words, 
+    your response shouldn't be much longer than the question asked by the user. Take note of the other perspectives
+    present, so you can try to differentiate your ideas from theirs.
 
+    If you need to read, write, or research something online, include a JSON block in your response in the following format:
+
+    
     ```json
     {{
-    "tool": "read" or "write" or "research",
-    "filename": "path/to/file" (for read/write only),
-    "content": "(Your agent name): content-to-write" (for write only),
-    "query": "search query" (for research only)
+        "tool": "read" or "write" or "research",
+        "filename": "path/to/file" (only for read/write),
+        "content": "(Your agent name): content-to-write" (only for 'write'),
+        "query": "search query here" (only for 'research')
     }}
-    Don't include the JSON block if no tool is needed. You may only create .txt files and only when instructed, using one tool per response
-    (meaning do not include any JSON block in your second response, it will not call up the tool in the second response).
+
+
+    If no tool is needed, do not include the JSON block. You can only create .txt files, and ONLY create them when told to.
+    You can ONLY use one tool per response, so do NOT include a JSON block in your second response if you have one.
     """
 
     prompt = PromptTemplate(
