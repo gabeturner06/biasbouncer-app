@@ -95,7 +95,8 @@ async def generate_response(
     "content": "(Your agent name): content-to-write" (for write only),
     "query": "search query" (for research only)
     }}
-    Don't include the JSON block if no tool is needed. You may only create .txt files and only when instructed, using one tool per response.
+    Don't include the JSON block if no tool is needed. You may only create .txt files and only when instructed, using one tool per response
+    (meaning do not include any JSON block in your second response, it will not call up the tool in the second response).
     """
 
     prompt = PromptTemplate(
