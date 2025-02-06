@@ -50,10 +50,9 @@ async def determine_companies(message: str, agent_number: int) -> List[str]:
     llm_instance = ChatOpenAI(temperature=0, model="gpt-4")
 
     template = f"""
-    Identify a list of up to {agent_number} of perspectives or advocates that could respond to the user's 
-    problem or question with different solutions. If the user lists different perspectives or sides of an 
-    argument, only use their suggestions. If they do not, create them in a way that will foster a conversation 
-    between diverse perspectives. Return them as comma-separated values.
+    Identify up to {agent_number} diverse, high-level perspectives that address the key aspects of the user's problem or question. 
+    If the user already provides specific perspectives or sides of an argument, use only those. Otherwise, generate distinct viewpoints 
+    that offer unique strategies and insights rather than generic roles. Return the perspectives as comma-separated values.
 
     User query: {message}
     """
@@ -80,32 +79,23 @@ async def generate_response(
     llm_instance = ChatOpenAI(temperature=0.7, model="gpt-4")
 
     template = """
-    You're in a casual group brainstorming chat representing or in support of the perspective: {company}.
-    The user just asked: {user_message}
-    Entire conversation so far:
-    {conversation_so_far}
+    You're in a casual group brainstorming chat for {company}. The user just asked: {user_message}
+    Conversation so far: {conversation_so_far}
+    Other perspectives: {all_perspectives}
 
-    Other perspectives participating in this brainstorming session include: {all_perspectives}
+    Reply briefly and informally—as if you're a pro brainstorming with friends. Share a single, quick idea for a feature or solution 
+    (not much longer than the user's question) that stands out from the others.
 
-    Please reply briefly and informally, as if you're a professional brainstorming with friends in a group 
-    chat. It is meant to be a quick, collaborative brainstorm session with the user, where you create a single 
-    idea for a feature or solution and briefly explain it as if it just "popped into your head." In other words, 
-    your response shouldn't be much longer than the question asked by the user. Take note of the other perspectives
-    present, so you can try to differentiate your ideas from theirs.
-
-    If you need to read, write, or research something online, include a JSON block in your response in the following format:
+    If you re asked to or absolutely need to read, write, or research online, include a JSON block like this:
 
     ```json
-    {{
-        "tool": "read" or "write" or "research",
-        "filename": "path/to/file" (only for read/write),
-        "content": "(Your agent name): content-to-write" (only for 'write'),
-        "query": "search query here" (only for 'research')
-    }}
-    ```
-
-    If no tool is needed, do not include the JSON block. You can only create .txt files, and ONLY create them when told to.
-    You can ONLY use one tool per response, so only ever use one tool at a time.
+    {
+    "tool": "read" or "write" or "research",
+    "filename": "path/to/file" (for read/write only),
+    "content": "(Your agent name): content-to-write" (for write only),
+    "query": "search query" (for research only)
+    }
+    Don't include the JSON block if no tool is needed. You may only create .txt files and only when instructed, using one tool per response.
     """
 
     prompt = PromptTemplate(
