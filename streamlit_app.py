@@ -98,7 +98,7 @@ async def generate_response(
     ```json
     {{
         "tool": "read" or "write" or "research",
-        "filename": "path/to/file" (only for read/write),
+        "filename": "filename" (only for read/write, do NOT include any other filepaths or folders),
         "content": "(Your agent name): content-to-write" (only for 'write'),
         "query": "search query here" (only for 'research')
     }}
