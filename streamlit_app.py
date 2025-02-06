@@ -89,12 +89,12 @@ async def generate_response(
     If you re asked to or absolutely need to read, write, or research online, include a JSON block like this:
 
     ```json
-    {
+    {{
     "tool": "read" or "write" or "research",
     "filename": "path/to/file" (for read/write only),
     "content": "(Your agent name): content-to-write" (for write only),
     "query": "search query" (for research only)
-    }
+    }}
     Don't include the JSON block if no tool is needed. You may only create .txt files and only when instructed, using one tool per response.
     """
 
