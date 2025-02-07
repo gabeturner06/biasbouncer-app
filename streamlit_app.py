@@ -50,9 +50,10 @@ async def determine_companies(message: str, agent_number: int) -> List[str]:
     llm_instance = ChatOpenAI(temperature=0, model="gpt-4")
 
     template = f"""
-    Identify up to {agent_number} diverse, high-level perspectives that address the key aspects of the user's problem or question. 
-    If the user already provides specific perspectives or sides of an argument, use only those. Otherwise, generate distinct viewpoints 
-    that offer unique strategies and insights rather than generic roles. Return the perspectives as comma-separated values.
+    Identify a list of up to {agent_number} of perspectives or advocates that could respond to the user's 
+    problem or question with different solutions. If the user lists different perspectives or sides of an 
+    argument, only use their suggestions. If they do not, create them in a way that will foster a conversation 
+    between diverse perspectives. Return them as comma-separated values.
 
     User query: {message}
     """
