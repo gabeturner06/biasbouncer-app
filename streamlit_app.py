@@ -1,15 +1,16 @@
 import streamlit as st
+
 import asyncio
 import re
 import json
-from dotenv import load_dotenv
 from typing import List, Dict, Callable
+
 from langchain.chat_models.openai import ChatOpenAI
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
 
-# Import tools from the new module
-from biasbouncer.tools.file_tools import read_tool, write_tool, list_files, research_tool
+from biasbouncer.tools.file_tools import read_tool, write_tool, list_files
+from biasbouncer.tools.research_tools import research_tool
 
 # ------------------------------------------------------------------------------
 # 1. Configure page layout

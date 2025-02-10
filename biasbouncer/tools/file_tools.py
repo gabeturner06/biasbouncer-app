@@ -2,11 +2,7 @@ import tempfile
 import aiofiles
 import os
 import json
-from langchain_community.tools import DuckDuckGoSearchRun
 import streamlit as st
-
-
-search_tool = DuckDuckGoSearchRun()
 
 # Ensure session state has a temp directory
 def ensure_temp_dir():
@@ -18,16 +14,6 @@ def ensure_temp_dir():
 def list_files():
     temp_dir = ensure_temp_dir()  # Ensure temp directory is initialized
     return os.listdir(temp_dir)
-
-async def research_tool(query: str) -> str:
-    """
-    Calls the DuckDuckGo search API and returns summarized results.
-    """
-    try:
-        results = search_tool.run(query)  # Use .run() instead of .invoke()
-        return results  # Directly return the search results string
-    except Exception as e:
-        return f"Error fetching search results: {str(e)}"
 
 # Function to write a file and trigger UI update
 async def write_tool(filename: str, content: str):
