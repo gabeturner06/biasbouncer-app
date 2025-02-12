@@ -51,7 +51,7 @@ async def determine_companies(message: str, agent_number: int) -> List[str]:
     llm_instance = ChatOpenAI(temperature=0, model="gpt-4")
 
     template = f"""
-    Identify a list of up to {agent_number} perspectives or advocates that could respond to the user's 
+    Identify a list of up to {agent_number} of perspectives or advocates that could respond to the user's 
     problem or question with different solutions. If the user lists different perspectives or sides of an 
     argument, only use their suggestions. If they do not, create them in a way that will foster a conversation 
     between diverse perspectives. Return them as comma-separated values.
@@ -332,55 +332,34 @@ with st.sidebar:
 
     messages_container = st.container()
 
-# Display past conversation in the sidebar
-with messages_container:
-    for msg in st.session_state.get("chat_history", []):
-        role = msg["role"]
-        content = msg["content"]
+    # Display past conversation in the side bar
+    with messages_container:
+        for msg in st.session_state["chat_history"]:
+            role = msg["role"]
+            content = msg["content"]
 
-        if role == "user":
-            st.chat_message("user").write(content)
-        else:
-            st.chat_message("assistant").write(f"**{role}**: {content}")
+            # If role is "user", show user bubble
+            if role == "user":
+                st.chat_message("user").write(content)
+            else:
+                # If role is one of the agent names, we show it as "assistant"
+                # but label it with the role name
+                st.chat_message("assistant").write(f"**{role}**: {content}")
 
-# Chat input at the bottom
+    # Chat input at the bottom
     user_input = st.chat_input("Work with the Agents")
     agent_number = st.slider("Number of Agents", 2, 6, 4)
-
-    # Custom agent toggle
-    if "use_custom_agents" not in st.session_state:
-        st.session_state["use_custom_agents"] = False
-
-    if "custom_agent_list" not in st.session_state:
-        st.session_state["custom_agent_list"] = ""
-
-    if st.button("Custom Agents"):
-        st.session_state["use_custom_agents"] = not st.session_state["use_custom_agents"]
-
-    # If custom agents toggle is enabled, show input field
-    if st.session_state["use_custom_agents"]:
-        custom_agents_input = st.text_input("Enter custom agents (comma-separated)", st.session_state["custom_agent_list"])
-        st.session_state["custom_agent_list"] = custom_agents_input
-
-    # Handle user input
     if user_input:
+        # Add user's message to the chat
         st.session_state["chat_history"].append({"role": "user", "content": user_input})
-        
         with messages_container:
             st.chat_message("user").write(user_input)
 
-        # Use custom agents if provided, otherwise generate agents dynamically
-        if st.session_state["use_custom_agents"] and st.session_state["custom_agent_list"]:
-            agents = [agent.strip() for agent in st.session_state["custom_agent_list"].split(",") if agent.strip()]
-            agents = agents[:agent_number]  # Limit to the selected number of agents
-        else:
-            agents = asyncio.run(determine_companies(user_input, agent_number))
-
-        # Store the selected agents
-        st.session_state["selected_agents"] = agents
-
-        # Display selected agents
-        st.write("Agents in Conversation:", ", ".join(agents))
+        # If we haven't determined perspectives yet, do so now
+        with st.spinner("Preparing Perspectives..."):
+            if not st.session_state["companies"]:
+                # Pass agent_number along with the user_input
+                st.session_state["companies"] = asyncio.run(determine_companies(user_input, agent_number))
 
 
         # Run all agents concurrently
