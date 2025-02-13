@@ -109,8 +109,8 @@ async def generate_response(
 
     If no tool is needed, do not include the JSON block. You can only create .txt files, and ONLY create them when told to.
     You can ONLY use one tool per response, so do NOT include a JSON block in your second response if you have one. ALWAYS include
-    as much direct information, figures, or quotes from your web research as you can, WITH ALL OF YOUR SOURCES, to show the user
-    your research was valuable and useful.
+    as much direct information, figures, or quotes from your web research as you can. List your sources in bullet points with
+    the title of the source and the author of the source.
     """
 
     prompt = PromptTemplate(
@@ -168,7 +168,7 @@ async def generate_response(
                     search_results = await research_tool(query)
 
                     # Modify conversation history to include research results
-                    updated_conversation = conversation_so_far + f"\n\n[Research on '{query}':]\n{search_results}"
+                    updated_conversation = conversation_so_far + f"\n\n[Research on '{query}':]\n{search_results} | Remember, ALWAYS include as much direct information, figures, or quotes from your web research as you can. List your sources in bullet points with the title of the source and the author of the source."
 
                     # Rerun the agent with new knowledge
                     second_response = await asyncio.to_thread(
