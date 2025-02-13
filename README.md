@@ -1,34 +1,39 @@
 # BiasBouncer
 
-**BiasBouncer** is a powerful tool designed to detect, analyze, and mitigate biases in AI models, particularly in natural language processing (NLP). Built with cutting-edge technology like **LangChain**, **Streamlit**, and **OpenAI**, it helps users identify biases in AI outputs and provides solutions for fairer, more inclusive models.
+**BiasBouncer** is a tool for creative thinkers and problem solvers that creates personal, diversified AI agents that help you to brainstorm ideas and bring them to life on a single platform.
 
 
-## 🚀 **Features**
+## 🚀 **How it Works**
 
-- **Bias Detection:** Leverages machine learning and NLP techniques to detect biases in AI-generated content.
-- **Customizable:** Easily integrate your own datasets and AI models for tailored bias analysis.
-- **Interactive Interface:** Built using Streamlit for a sleek, easy-to-use web interface.
-- **Real-time Analysis:** Instantly evaluate model outputs for signs of bias with comprehensive visual feedback.
-- **Open Source:** Open and transparent design to encourage community collaboration and improvement.
+Every idea begins to take shape with a Brainstorming session. Ask a question or pitch your idea to BiasBouncer in the Brainstorm Chat. From there, BiasBouncer will explore the different perspectives needed to accurately address the complications of your idea. Each agent will respond to you casually, outlining their informed thoughts or spitballing new ideas. Keep brainstorming with your team the same way you would with your friends or work partners. When you have a plan put together, you can begin orchestrating your work.
+
+BiasBouncer will instruct agents to simultaneously perform different tasks like research, coding, reviewing, and more. Those tasks will populate in the "To Do" column and gradually move to the right, so you can monitor their progress and review the task details. You can always chat with the agents if they have questions about their work or you want to add feedback. Once all the tasks have ended up in the "Done" column, your finished project will be ready to download!
 
 ---
 
-## 🛠️ **Technologies Used**
+## 🛠️ **Tools and Abilities**
 
-- **LangChain**: For building powerful pipelines and workflows with LLMs.
-- **Streamlit**: For creating an intuitive, interactive frontend.
-- **OpenAI API**: To utilize GPT-3 for analysis and generation.
-- **Chroma**: A vector database for storing and retrieving embeddings.
-- **Python**: The core language for the application.
-- **Docker**: For containerized deployment.
-- **GitHub Actions**: For CI/CD workflows.
+- **Web Research:** Agents can simultaneously perform independent web research and analyze their results with sources.
+- **Read & Write:** Agents can write their ideas to files for long-term memory that can be downloaded and editted by the user.
+- **Debate:** Agents representing opposing perspectives can debate each other to compromise on the best solution.
+
+---
+
+## 🆕 **Latest Updates**
+- **January 22:** Launch of BiasBouncer
+- **January 30:** Agentic Read, Write, and Research Tools Added
+
+---
+
+## 🔍 **Coming Soon**
+- **February 20:** Full Task Automation Workflow in Team Workbench
 
 ---
 
 ## 🌐 **Live Demo**
 
 Check out the **BiasBouncer** app running live! Visit the link below:  
-[**Live Demo**](https://your-deployed-app-link.com)
+[**Live Demo**](https://.com](https://biasbouncer-app.streamlit.app/))
 
 ---
 
