@@ -1,6 +1,6 @@
-from langchain_community.tools import DuckDuckGoSearchRun
+from langchain_community.tools import DuckDuckGoSearchResults
 
-search_tool = DuckDuckGoSearchRun()
+search_tool = DuckDuckGoSearchResults(output_format="list")
 
 async def research_tool(query: str) -> str:
     """
