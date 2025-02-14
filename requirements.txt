@@ -1,6 +1,8 @@
 streamlit
 langchain-community
+langchain-openai
 duckduckgo-search
 openai
 chromadb
 aiofiles
+bs4
