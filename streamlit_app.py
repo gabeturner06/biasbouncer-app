@@ -108,8 +108,8 @@ async def generate_response(
 
     If no tool is needed, do not include the JSON block. You can only create .txt files, and ONLY create them when told to.
     You can ONLY use one tool per response, so do NOT include a JSON block in your second response if you have one. ALWAYS include
-    as much direct information, figures, or quotes from your web research as you can. List your sources in bullet points with
-    the title of the source and the author of the source.
+    as much direct information, figures, or quotes from your web research as you can. List your sources in bullet points in the format:
+    "title," author/organization, website URL.
     """
 
     prompt = PromptTemplate(
