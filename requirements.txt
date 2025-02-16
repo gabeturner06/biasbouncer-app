@@ -5,4 +5,4 @@ duckduckgo-search
 openai
 chromadb
 aiofiles
-bs4
+trafilatura

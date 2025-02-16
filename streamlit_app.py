@@ -10,7 +10,7 @@ from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
 
 from biasbouncer.tools.file_tools import read_tool, write_tool, list_files
-from biasbouncer.tools.research_tools import research_tool
+from biasbouncer.tools.research_tools import research_tool, scrape_webpage
 
 # ------------------------------------------------------------------------------
 # 1. Configure page layout
@@ -73,7 +73,8 @@ async def generate_response(
     all_perspectives: List[str],
     read_tool: Callable = None,
     write_tool: Callable = None,
-    research_tool: Callable = None
+    research_tool: Callable = None,
+    scrape_webpage_tool: Callable = None
 ) -> str:
     """
     Generates a short, informal, brainstorming-style response from the perspective of `company`.
@@ -101,17 +102,18 @@ async def generate_response(
     
     ```json
     {{
-        "tool": "read" or "write" or "research",
+        "tool": "read", "write", "research" or "scrape_webpage",
         "filename": "filename" (only for read/write, do NOT include any other filepaths or folders),
         "content": "(Your agent name): content-to-write" (only for 'write'),
-        "query": "search query here" (only for 'research')
+        "query": "search query here" (only for 'research'),
+        "url": "full url of the website you want to scrape (only for 'scrape_webpage')
     }}
 
 
     If no tool is needed, do not include the JSON block. You can only create .txt files, and ONLY create them when told to.
     You can ONLY use one tool per response, so do NOT include a JSON block in your second response if you have one. ALWAYS include
     as much direct information, figures, or quotes from your web research as you can. List your sources in bullet points in the format:
-    "title," author/organization, website URL (name the link 'Source' always).
+    "title," author/organization, website URL (name the link 'Source' always). ALWAYS ask the user before scraping any webpages.
     """
 
     prompt = PromptTemplate(
@@ -170,6 +172,25 @@ async def generate_response(
 
                     # Modify conversation history to include research results
                     updated_conversation = conversation_so_far + f"\n\n[Research on '{query}':]\n{search_results} | Remember, ALWAYS include as much direct information, figures, or quotes from your web research as you can. List your sources in bullet points with the title of the source and the author of the source."
+
+                    # Rerun the agent with new knowledge
+                    second_response = await asyncio.to_thread(
+                        chain.run,
+                        company=company,
+                        user_message=user_message,
+                        conversation_so_far=updated_conversation,
+                        all_perspectives=", ".join(all_perspectives)
+                    )
+
+                    return second_response
+                
+            elif tool_data["tool"] == "scrape_webpage" and scrape_webpage_tool:
+                with st.spinner("Reading Web Pages"):
+                    url = tool_data["url"]
+                    webscrape_results = await scrape_webpage_tool(query)
+
+                    # Modify conversation history to include research results
+                    updated_conversation = conversation_so_far + f"\n\n[Information from website '{url}':]\n{webscrape_results} | Remember, ALWAYS include as much direct information, figures, or quotes from your web scrape as you can."
 
                     # Rerun the agent with new knowledge
                     second_response = await asyncio.to_thread(
