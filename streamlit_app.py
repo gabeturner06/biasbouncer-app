@@ -10,7 +10,7 @@ from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
 
 from biasbouncer.tools.file_tools import read_tool, write_tool, list_files
-from biasbouncer.tools.research_tools import research_tool, scrape_webpage
+from biasbouncer.tools.research_tools import research_tool, scrape_webpage_tool
 
 # ------------------------------------------------------------------------------
 # 1. Configure page layout
@@ -187,7 +187,7 @@ async def generate_response(
             elif tool_data["tool"] == "scrape_webpage" and scrape_webpage_tool:
                 with st.spinner("Reading Web Pages"):
                     url = tool_data["url"]
-                    webscrape_results = await scrape_webpage_tool(query)
+                    webscrape_results = await scrape_webpage_tool(url)
 
                     # Modify conversation history to include research results
                     updated_conversation = conversation_so_far + f"\n\n[Information from website '{url}':]\n{webscrape_results} | Remember, ALWAYS include as much direct information, figures, or quotes from your web scrape as you can."
