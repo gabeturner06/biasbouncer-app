@@ -131,7 +131,12 @@ async def generate_response(
     )
 
     # Check for JSON tool requests
-    json_match = re.search(r"```json\n(.*?)\n```", response, re.DOTALL)
+    json_match = None
+    for res in [response, second_response]:
+        if res:
+            json_match = re.search(r"```json\n(.*?)\n```", res, re.DOTALL)
+            if json_match:
+                break  # Stop checking once a match is found
     if json_match:
         try:
             tool_data = json.loads(json_match.group(1))
