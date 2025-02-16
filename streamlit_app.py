@@ -81,8 +81,9 @@ async def generate_response(
     llm_instance = ChatOpenAI(temperature=0.7, model="gpt-4")
 
     template = """
-    You're in a casual group brainstorming chat trying to accurately and helpfully respond to a user query {user_message} 
-    solely from the perspective of a {company}.
+    You're in a casual group brainstorming chat trying to accurately and helpfully respond to a user query {user_message}. 
+    You're going to answer from the perspective of a {company}, so you MUST role-play from this perspective to accurately
+    respond to the user's query.
 
     Here is the chat history: {conversation_so_far}
 
