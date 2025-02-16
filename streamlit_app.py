@@ -102,10 +102,10 @@ async def generate_response(
     
     ```json
     {{
-        "tool": "read", "write", "research" or "scrape_webpage",
-        "filename": "filename" (only for read/write, do NOT include any other filepaths or folders),
-        "content": "(Your agent name): content-to-write" (only for 'write'),
-        "query": "search query here" (only for 'research'),
+        "tool": "read", "write", "research" or "scrape_webpage"
+        "filename": "filename" (only for read/write, do NOT include any other filepaths or folders)
+        "content": "(Your agent name): content-to-write" (only for 'write')
+        "query": "search query here" (only for 'research')
         "url": "full url of the website you want to scrape (only for 'scrape_webpage')
     }}
 
