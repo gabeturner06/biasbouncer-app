@@ -130,86 +130,84 @@ async def generate_response(
         all_perspectives=", ".join(all_perspectives)
     )
 
-    # Check for JSON tool requests
     json_match = None
-    for res in [response, second_response]:
+    for res in [response, second_response]:  # Check both responses
         if res:
             json_match = re.search(r"```json\n(.*?)\n```", res, re.DOTALL)
             if json_match:
-                break  # Stop checking once a match is found
-    if json_match:
-        try:
-            tool_data = json.loads(json_match.group(1))
+                try:
+                    tool_data = json.loads(json_match.group(1))
 
-            # Handle file reading
-            if tool_data["tool"] == "read" and read_tool:
-                with st.spinner("Reading Files"):
-                    filename = tool_data["filename"]
-                    read_data = await read_tool(filename)
+                    # Handle file reading
+                    if tool_data["tool"] == "read" and read_tool:
+                        with st.spinner("Reading Files"):
+                            filename = tool_data["filename"]
+                            read_data = await read_tool(filename)
 
-                    # Modify conversation history to include file content
-                    updated_conversation = conversation_so_far + f"\n\n[File '{filename}' was read and contained:]\n{read_data}"
+                            # Modify conversation history to include file content
+                            updated_conversation = conversation_so_far + f"\n\n[File '{filename}' was read and contained:]\n{read_data}"
 
-                    # Rerun the agent with the new context
-                    second_response = await asyncio.to_thread(
-                        chain.run,
-                        company=company,
-                        user_message=user_message,
-                        conversation_so_far=updated_conversation,
-                        all_perspectives=", ".join(all_perspectives)
-                    )
+                            # Rerun the agent with the new context
+                            second_response = await asyncio.to_thread(
+                                chain.run,
+                                company=company,
+                                user_message=user_message,
+                                conversation_so_far=updated_conversation,
+                                all_perspectives=", ".join(all_perspectives)
+                            )
 
-                    return second_response
+                            return second_response
 
-            # Handle file writing
-            elif tool_data["tool"] == "write" and write_tool:
-                with st.spinner("Writing to File"):
-                    filename = tool_data["filename"]
-                    content = tool_data["content"]
-                    write_result = await write_tool(filename, content)
-                    return f"{response}\n\n[Tool Output]: {write_result}"
+                    # Handle file writing
+                    elif tool_data["tool"] == "write" and write_tool:
+                        with st.spinner("Writing to File"):
+                            filename = tool_data["filename"]
+                            content = tool_data["content"]
+                            write_result = await write_tool(filename, content)
+                            return f"{response}\n\n[Tool Output]: {write_result}"
 
-            # Handle web research
-            elif tool_data["tool"] == "research" and research_tool:
-                with st.spinner("Searching the Web"):
-                    query = tool_data["query"]
-                    search_results = await research_tool(query)
+                    # Handle web research
+                    elif tool_data["tool"] == "research" and research_tool:
+                        with st.spinner("Searching the Web"):
+                            query = tool_data["query"]
+                            search_results = await research_tool(query)
 
-                    # Modify conversation history to include research results
-                    updated_conversation = conversation_so_far + f"\n\n[Research on '{query}':]\n{search_results} | Remember, ALWAYS include as much direct information, figures, or quotes from your web research as you can. List your sources in bullet points with the title of the source and the author of the source."
+                            # Modify conversation history to include research results
+                            updated_conversation = conversation_so_far + f"\n\n[Research on '{query}':]\n{search_results} | Remember, ALWAYS include as much direct information, figures, or quotes from your web research as you can. List your sources in bullet points with the title of the source and the author of the source."
 
-                    # Rerun the agent with new knowledge
-                    second_response = await asyncio.to_thread(
-                        chain.run,
-                        company=company,
-                        user_message=user_message,
-                        conversation_so_far=updated_conversation,
-                        all_perspectives=", ".join(all_perspectives)
-                    )
+                            # Rerun the agent with new knowledge
+                            second_response = await asyncio.to_thread(
+                                chain.run,
+                                company=company,
+                                user_message=user_message,
+                                conversation_so_far=updated_conversation,
+                                all_perspectives=", ".join(all_perspectives)
+                            )
 
-                    return second_response
-                
-            elif tool_data["tool"] == "scrape_webpage" and scrape_webpage_tool:
-                with st.spinner("Reading Web Pages"):
-                    url = tool_data["url"]
-                    webscrape_results = await scrape_webpage_tool(url)
+                            return second_response
 
-                    # Modify conversation history to include research results
-                    updated_conversation = conversation_so_far + f"\n\n[Information from website '{url}':]\n{webscrape_results} | Remember, ALWAYS include as much direct information, figures, or quotes from your web scrape as you can."
+                    # Handle web scraping
+                    elif tool_data["tool"] == "scrape_webpage" and scrape_webpage_tool:
+                        with st.spinner("Reading Web Pages"):
+                            url = tool_data["url"]
+                            webscrape_results = await scrape_webpage_tool(url)
 
-                    # Rerun the agent with new knowledge
-                    second_response = await asyncio.to_thread(
-                        chain.run,
-                        company=company,
-                        user_message=user_message,
-                        conversation_so_far=updated_conversation,
-                        all_perspectives=", ".join(all_perspectives)
-                    )
+                            # Modify conversation history to include web scrape results
+                            updated_conversation = conversation_so_far + f"\n\n[Information from website '{url}':]\n{webscrape_results} | Remember, ALWAYS include as much direct information, figures, or quotes from your web scrape as you can."
 
-                    return second_response
+                            # Rerun the agent with new knowledge
+                            second_response = await asyncio.to_thread(
+                                chain.run,
+                                company=company,
+                                user_message=user_message,
+                                conversation_so_far=updated_conversation,
+                                all_perspectives=", ".join(all_perspectives)
+                            )
 
-        except (json.JSONDecodeError, KeyError):
-            return f"Error parsing JSON tool invocation in the response:\n{response}"
+                            return second_response
+
+                except (json.JSONDecodeError, KeyError):
+                    return f"Error parsing JSON tool invocation in the response:\n{res}"
 
     return response.strip()
 
