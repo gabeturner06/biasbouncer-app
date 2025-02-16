@@ -102,11 +102,11 @@ async def generate_response(
     
     ```json
     {{
-        "tool": "read", "write", "research" or "scrape_webpage"
-        "filename": "filename" (only for read/write, do NOT include any other filepaths or folders)
-        "content": "(Your agent name): content-to-write" (only for 'write')
-        "query": "search query here" (only for 'research')
-        "url": "full url of the website you want to scrape (only for 'scrape_webpage')
+        "tool": "read", "write", "research" or "scrape_webpage",
+        "filename": "filename" (only for read/write, do NOT include any other filepaths or folders),
+        "content": "(Your agent name): content-to-write" (only for 'write'),
+        "query": "search query here" (only for 'research'),
+        "url": "full url of the website you want to scrape" (only for 'scrape_webpage')
     }}
 
 
@@ -215,7 +215,8 @@ async def run_agents(
     conversation: List[Dict[str, str]],
     read_tool: Callable = read_tool,
     write_tool: Callable = write_tool,
-    research_tool: Callable = research_tool
+    research_tool: Callable = research_tool,
+    scrape_webpage_tool: Callable = scrape_webpage_tool
 ) -> Dict[str, str]:
     conversation_text = "\n".join(
         f"{msg['role'].upper()}: {msg['content']}" for msg in conversation
@@ -229,7 +230,8 @@ async def run_agents(
             all_perspectives=companies,
             read_tool=read_tool,
             write_tool=write_tool,
-            research_tool=research_tool
+            research_tool=research_tool,
+            scrape_webpage_tool=scrape_webpage_tool
         )
         for company in companies
     ]
