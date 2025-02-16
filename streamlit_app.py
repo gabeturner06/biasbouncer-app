@@ -81,12 +81,13 @@ async def generate_response(
     llm_instance = ChatOpenAI(temperature=0.7, model="gpt-4")
 
     template = """
-    You're in a casual group brainstorming chat representing or in support of the perspective: {company}.
-    The user just asked: {user_message}
-    Entire conversation so far:
-    {conversation_so_far}
+    You're in a casual group brainstorming chat trying to accurately and helpfully respond to a user query {user_message} 
+    solely from the perspective of a {company}.
 
-    Other perspectives participating in this brainstorming session include: {all_perspectives}
+    Here is the chat history: {conversation_so_far}
+
+    Here are all of the perspectives in this conversation with the user: {all_perspectives}. Remember, you're only representing 
+    {company}; other agents will represent the others.
 
     Please reply briefly and informally, as if you're a professional brainstorming with friends in a group 
     chat. It is meant to be a quick, collaborative brainstorm session with the user, where you discuss and evaluate ideas 
