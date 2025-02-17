@@ -12,6 +12,7 @@ from langchain.chains import LLMChain
 from biasbouncer.tools.file_tools import read_tool, write_tool, list_files
 from biasbouncer.tools.research_tools import research_tool, scrape_webpage_tool
 
+
 # ------------------------------------------------------------------------------
 # 1. Configure page layout
 # ------------------------------------------------------------------------------
