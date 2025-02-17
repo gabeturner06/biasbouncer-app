@@ -131,7 +131,6 @@ async def generate_response(
         all_perspectives=", ".join(all_perspectives)
     )
 
-
     json_match = re.search(r"```json\n(.*?)\n```", response, re.DOTALL)
     if json_match:
         try:
@@ -184,7 +183,6 @@ async def generate_response(
 
                         return second_response
 
-                    # Handle web scraping
             elif tool_data["tool"] == "scrape_webpage" and scrape_webpage_tool:
                     with st.spinner("Reading Web Pages"):
                         url = tool_data["url"]
@@ -266,12 +264,6 @@ def explain():
 if st.button("How it Works", type="secondary"):
     explain()
 
-@st.dialog("2/16/25 Update")
-def update():
-    st.divider()
-    st.write("As of February 16, 2025, BiasBouncer will be down for maintenance until February 20, 2025.")
-if st.button("2/16/25 Update", type="tertiary"):
-    update()
 
 col1, col2, col3, col4 = st.columns(4, border=True, gap="small")
 
