@@ -110,7 +110,6 @@ async def generate_response(
         "url": "full url of the website you want to scrape" (only for 'scrape_webpage')
     }}
 
-
     If no tool is needed, do not include the JSON block. You can only create .txt files, and ONLY create them when told to.
     You can ONLY use one tool per response, so do NOT include a JSON block in your second response if you have one. ALWAYS include
     as much direct information, figures, or quotes from your web research as you can. List your sources in bullet points in the format:
@@ -131,11 +130,13 @@ async def generate_response(
         all_perspectives=", ".join(all_perspectives)
     )
 
+    # Corrected indentation of json_match
     json_match = re.search(r"```json\n(.*?)\n```", response, re.DOTALL)
     if json_match:
         try:
             tool_data = json.loads(json_match.group(1))
 
+            # Handle file reading
             if tool_data["tool"] == "read" and read_tool:
                 with st.spinner("Reading Files"):
                     filename = tool_data["filename"]
@@ -155,14 +156,16 @@ async def generate_response(
 
                 return second_response
 
+            # Handle file writing
             elif tool_data["tool"] == "write" and write_tool:
                 with st.spinner("Writing to File"):
                     filename = tool_data["filename"]
                     content = tool_data["content"]
                     write_result = await write_tool(filename, content)
-                
+
                 return f"{response}\n\n[Tool Output]: {write_result}"
 
+            # Handle web research
             elif tool_data["tool"] == "research" and research_tool:
                 with st.spinner("Searching the Web"):
                     query = tool_data["query"]
@@ -182,6 +185,7 @@ async def generate_response(
 
                 return second_response
 
+            # Handle web scraping
             elif tool_data["tool"] == "scrape_webpage" and scrape_webpage_tool:
                 with st.spinner("Reading Web Pages"):
                     url = tool_data["url"]
