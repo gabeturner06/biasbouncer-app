@@ -268,6 +268,13 @@ def explain():
 if st.button("How it Works", type="secondary"):
     explain()
 
+@st.dialog("2/16/25 Update")
+def update():
+    st.divider()
+    st.write("As of February 16, 2025, BiasBouncer will be down for maintenance until February 20, 2025.")
+if st.button("2/16/25 Update", type="tertiary"):
+    update()
+
 col1, col2, col3, col4 = st.columns(4, border=True, gap="small")
 
 
