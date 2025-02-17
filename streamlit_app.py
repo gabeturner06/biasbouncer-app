@@ -94,13 +94,10 @@ async def generate_response(
 
     Please reply briefly and informally, as if you're a professional brainstorming with friends in a group 
     chat. It is meant to be a quick, collaborative brainstorm session with the user, where you discuss and evaluate ideas 
-    created by the user, and briefly explain your reasoning. In other words, your response shouldn't be much longer than the
-    question asked by the user. Take note of the other perspectives present, so you can try to differentiate your ideas from theirs. 
-    If you're instructed to do nothing, then just reply sure thing and do nothing.
+    created by the user, and briefly explain your reasoning. 
 
     If you need to read, write, or research something online, include a JSON block in your response in the following format:
 
-    
     ```json
     {{
         "tool": "read", "write", "research" or "scrape_webpage",
@@ -111,9 +108,6 @@ async def generate_response(
     }}
 
     If no tool is needed, do not include the JSON block. You can only create .txt files, and ONLY create them when told to.
-    You can ONLY use one tool per response, so do NOT include a JSON block in your second response if you have one. ALWAYS include
-    as much direct information, figures, or quotes from your web research as you can. List your sources in bullet points in the format:
-    "title," author/organization, website URL (name the link 'Source' always). ALWAYS ask the user before scraping any webpages.
     """
 
     prompt = PromptTemplate(
@@ -130,31 +124,18 @@ async def generate_response(
         all_perspectives=", ".join(all_perspectives)
     )
 
-    # Corrected indentation of json_match
     json_match = re.search(r"```json\n(.*?)\n```", response, re.DOTALL)
     if json_match:
         try:
             tool_data = json.loads(json_match.group(1))
+            updates = []  # Collect all updates before running the model again
 
             # Handle file reading
             if tool_data["tool"] == "read" and read_tool:
                 with st.spinner("Reading Files"):
                     filename = tool_data["filename"]
                     read_data = await read_tool(filename)
-
-                # Modify conversation history to include file content
-                updated_conversation = conversation_so_far + f"\n\n[File '{filename}' was read and contained:]\n{read_data}"
-
-                # Rerun the agent with the new context
-                second_response = await asyncio.to_thread(
-                    chain.run,
-                    company=company,
-                    user_message=user_message,
-                    conversation_so_far=updated_conversation,
-                    all_perspectives=", ".join(all_perspectives)
-                )
-
-                return second_response
+                    updates.append(f"[File '{filename}' was read and contained:]\n{read_data}")
 
             # Handle file writing
             elif tool_data["tool"] == "write" and write_tool:
@@ -162,39 +143,27 @@ async def generate_response(
                     filename = tool_data["filename"]
                     content = tool_data["content"]
                     write_result = await write_tool(filename, content)
-
-                return f"{response}\n\n[Tool Output]: {write_result}"
+                    updates.append(f"[Tool Output: File '{filename}' was written successfully.]")
 
             # Handle web research
             elif tool_data["tool"] == "research" and research_tool:
                 with st.spinner("Searching the Web"):
                     query = tool_data["query"]
                     search_results = await research_tool(query)
-
-                # Modify conversation history to include research results
-                updated_conversation = conversation_so_far + f"\n\n[Research on '{query}':]\n{search_results} | Remember, ALWAYS include as much direct information, figures, or quotes from your web research as you can. List your sources in bullet points with the title of the source and the author of the source."
-
-                # Rerun the agent with new knowledge
-                second_response = await asyncio.to_thread(
-                    chain.run,
-                    company=company,
-                    user_message=user_message,
-                    conversation_so_far=updated_conversation,
-                    all_perspectives=", ".join(all_perspectives)
-                )
-
-                return second_response
+                    updates.append(f"[Research on '{query}':]\n{search_results}")
 
             # Handle web scraping
             elif tool_data["tool"] == "scrape_webpage" and scrape_webpage_tool:
                 with st.spinner("Reading Web Pages"):
                     url = tool_data["url"]
                     webscrape_results = await scrape_webpage_tool(url)
+                    updates.append(f"[Information from website '{url}':]\n{webscrape_results}")
 
-                # Modify conversation history to include web scrape results
-                updated_conversation = conversation_so_far + f"\n\n[Information from website '{url}':]\n{webscrape_results} | Remember, ALWAYS include as much direct information, figures, or quotes from your web scrape as you can."
+            if updates:
+                # Update conversation with all collected tool outputs
+                updated_conversation = conversation_so_far + "\n\n" + "\n\n".join(updates)
 
-                # Rerun the agent with new knowledge
+                # Rerun the agent with the updated conversation
                 second_response = await asyncio.to_thread(
                     chain.run,
                     company=company,
@@ -209,7 +178,6 @@ async def generate_response(
             return f"Error parsing JSON tool invocation in the response:\n{response}"
 
     return response.strip()
-
 
 async def run_agents(
     companies: List[str],

@@ -46,7 +46,6 @@ async def read_tool(filename: str):
     except Exception as e:
         return f"Error reading from temporary file: {str(e)}"
 
-# Function to process tool invocation from JSON
 async def process_tool_invocation_temp(tool_json: str) -> str:
     try:
         tool_data = json.loads(tool_json)
