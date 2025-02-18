@@ -59,7 +59,7 @@ async def determine_companies(message: str, agent_number: int) -> List[str]:
 
     template = f"""
     Identify a list of up to {agent_number} of perspectives or advocates that could respond to the user's 
-    problem or question with different solutions. If the user lists different perspectives or sides of an 
+    problem or question with different solutions, followed by the name of your AI model. If the user lists different perspectives or sides of an 
     argument, only use their suggestions. If they do not, create them in a way that will foster a conversation 
     between diverse perspectives. Return them as comma-separated values.
 
