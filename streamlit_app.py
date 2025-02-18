@@ -41,8 +41,6 @@ if "chat_history" not in st.session_state:
 
 if "companies" not in st.session_state:
     st.session_state["companies"] = []
-
-llm = OpenAI(temperature=0, openai_api_key=openai_api_key)  # OpenAI model setup
     
 # ------------------------------------------------------------------------------
 # 3. Multi-Agent Creation System (Using DeepSeek)
