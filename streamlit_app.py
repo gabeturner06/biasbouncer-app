@@ -188,19 +188,19 @@ async def generate_response(
                     url = tool_data["url"]
                     webscrape_results = await scrape_webpage_tool(url)
 
-                # Modify conversation history to include web scrape results
-                updated_conversation = conversation_so_far + f"\n\n[Information from website '{url}':]\n{webscrape_results.get('content', 'No content extracted.')} \n Remember, ALWAYS include as much direct information, figures, or quotes from the website as you can."
+                    # Modify conversation history to include web scrape results
+                    updated_conversation = conversation_so_far + f"\n\n[Information from website '{url}':]\n{webscrape_results.get('content', 'No content extracted.')} \n Remember, ALWAYS include as much direct information, figures, or quotes from the website as you can."
 
-                # Rerun the agent with new knowledge
-                second_response = await asyncio.to_thread(
-                    chain.run,
-                    company=company,
-                    user_message=user_message,
-                    conversation_so_far=updated_conversation,
-                    all_perspectives=", ".join(all_perspectives)
-                )
+                    # Rerun the agent with new knowledge
+                    second_response = await asyncio.to_thread(
+                        chain.run,
+                        company=company,
+                        user_message=user_message,
+                        conversation_so_far=updated_conversation,
+                        all_perspectives=", ".join(all_perspectives)
+                    )
 
-                return second_response
+                    return second_response
 
         except (json.JSONDecodeError, KeyError):
             return f"Error parsing JSON tool invocation in the response:\n{response}"
