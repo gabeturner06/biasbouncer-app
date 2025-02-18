@@ -5,7 +5,8 @@ import re
 import json
 from typing import List, Dict, Callable
 
-from langchain_openai import ChatOpenAI, OpenAI
+from openai import OpenAI
+from langchain_openai import ChatOpenAI
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
 
@@ -24,7 +25,6 @@ if "OPENAI_API_KEY" not in st.secrets:
     st.error("OpenAI API key not found in Streamlit secrets.")
     st.stop()
 
-# Check for DeepSeek API key
 if "DEEPSEEK_API_KEY" not in st.secrets:
     st.error("DeepSeek API key not found in Streamlit secrets.")
     st.stop()
@@ -34,33 +34,34 @@ openai_api_key = st.secrets["OPENAI_API_KEY"]
 deepseek_api_key = st.secrets["DEEPSEEK_API_KEY"]
 
 # ------------------------------------------------------------------------------
-# 2. Session State initialization
+# 2. Session State Initialization
 # ------------------------------------------------------------------------------
 if "chat_history" not in st.session_state:
-    # We'll store conversation messages here in the format:
-    # {"role": "user" OR "<company_name>", "content": "..."}opp
     st.session_state["chat_history"] = []
 
 if "companies" not in st.session_state:
-    # Dynamically generated list of 'perspectives'
     st.session_state["companies"] = []
 
-llm = ChatOpenAI(temperature=0)  # Base LLM (not used directly below but you can adapt)
+llm = OpenAI(temperature=0, openai_api_key=openai_api_key)  # OpenAI model setup
     
 # ------------------------------------------------------------------------------
-# 5. Multi-Agent Creation System
+# 3. Multi-Agent Creation System (Using DeepSeek)
 # ------------------------------------------------------------------------------
 
 async def determine_companies(message: str, agent_number: int) -> List[str]:
     """
-    Uses an LLM to analyze the user query and determine up to {agent_number} relevant perspectives.
+    Uses DeepSeek's API to analyze the user query and determine up to {agent_number} relevant perspectives.
     """
-    llm_instance =  OpenAI(api_key="<DeepSeek API Key>", base_url="https://api.deepseek.com", model="deepseek-reasoner")
+    llm_instance = OpenAI(
+        api_key=deepseek_api_key,
+        base_url="https://api.deepseek.com",
+        model="deepseek-reasoner"
+    )
 
     template = f"""
-    Identify a list of up to {agent_number} of perspectives or advocates that could respond to the user's 
+    Identify a list of up to {agent_number} perspectives or advocates that could respond to the user's 
     problem or question with different solutions, followed by the name of your AI model. If the user lists different perspectives or sides of an 
-    argument, only use their suggestions. If they do not, create them in a way that will foster a conversation 
+    argument, only use their suggestions. If they do not, create them in a way that fosters conversation 
     between diverse perspectives. Return them as comma-separated values.
 
     User query: {message}
