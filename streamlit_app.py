@@ -5,7 +5,6 @@ import re
 import json
 from typing import List, Dict, Callable
 
-from openai import OpenAI
 from langchain_openai import ChatOpenAI
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
@@ -25,54 +24,45 @@ if "OPENAI_API_KEY" not in st.secrets:
     st.error("OpenAI API key not found in Streamlit secrets.")
     st.stop()
 
-if "DEEPSEEK_API_KEY" not in st.secrets:
-    st.error("DeepSeek API key not found in Streamlit secrets.")
-    st.stop()
-
-# Retrieve API keys
-openai_api_key = st.secrets["OPENAI_API_KEY"]
-deepseek_api_key = st.secrets["DEEPSEEK_API_KEY"]
+api_key = st.secrets["OPENAI_API_KEY"]
 
 # ------------------------------------------------------------------------------
-# 2. Session State Initialization
+# 2. Session State initialization
 # ------------------------------------------------------------------------------
 if "chat_history" not in st.session_state:
+    # We'll store conversation messages here in the format:
+    # {"role": "user" OR "<company_name>", "content": "..."}opp
     st.session_state["chat_history"] = []
 
 if "companies" not in st.session_state:
+    # Dynamically generated list of 'perspectives'
     st.session_state["companies"] = []
+
+llm = ChatOpenAI(temperature=0)  # Base LLM (not used directly below but you can adapt)
     
 # ------------------------------------------------------------------------------
-# 3. Multi-Agent Creation System (Using DeepSeek)
-# ------------------------------------------------------------------------------
-
-deepseek_client = OpenAI(api_key=deepseek_api_key, base_url="https://api.deepseek.com")
-
-# ------------------------------------------------------------------------------
-# 4. Multi-Agent Creation System (Using DeepSeek)
+# 5. Multi-Agent Creation System
 # ------------------------------------------------------------------------------
 
 async def determine_companies(message: str, agent_number: int) -> List[str]:
     """
-    Uses DeepSeek's API to analyze the user query and determine up to {agent_number} relevant perspectives.
+    Uses an LLM to analyze the user query and determine up to {agent_number} relevant perspectives.
     """
-    response = deepseek_client.chat.completions.create(
-        model="deepseek-reasoner",
-        messages=[
-            {
-                "role": "system",
-                "content": f"Identify a list of up to {agent_number} perspectives or advocates that could respond "
-                           "to the user's problem or question with different solutions. If the user lists different "
-                           "perspectives or sides of an argument, only use their suggestions. If they do not, create "
-                           "them in a way that fosters conversation between diverse perspectives. Return them as "
-                           "comma-separated values."
-            },
-            {"role": "user", "content": message}
-        ],
-        stream=False
-    )
+    llm_instance = ChatOpenAI(temperature=0, model="gpt-4")
 
-    companies = [item.strip() for item in response.choices[0].message.content.split(",") if item.strip()]
+    template = f"""
+    Identify a list of up to {agent_number} of perspectives or advocates that could respond to the user's 
+    problem or question with different solutions. If the user lists different perspectives or sides of an 
+    argument, only use their suggestions. If they do not, create them in a way that will foster a conversation 
+    between diverse perspectives. Return them as comma-separated values.
+
+    User query: {message}
+    """
+    prompt = PromptTemplate(input_variables=["message", "agent_number"], template=template)
+    chain = LLMChain(llm=llm_instance, prompt=prompt)
+
+    response = await asyncio.to_thread(chain.run, message=message, agent_number=agent_number)
+    companies = [item.strip() for item in response.split(",") if item.strip()]
     print(companies)
     return companies[:agent_number]
 
