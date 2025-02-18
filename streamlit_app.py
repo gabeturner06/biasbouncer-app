@@ -55,7 +55,7 @@ async def determine_companies(message: str, agent_number: int) -> List[str]:
     """
     Uses an LLM to analyze the user query and determine up to {agent_number} relevant perspectives.
     """
-    llm_instance =  OpenAI(api_key="<DeepSeek API Key>", base_url="https://api.deepseek.com")
+    llm_instance =  OpenAI(api_key="<DeepSeek API Key>", base_url="https://api.deepseek.com", model="deepseek-reasoner")
 
     template = f"""
     Identify a list of up to {agent_number} of perspectives or advocates that could respond to the user's 
@@ -66,7 +66,7 @@ async def determine_companies(message: str, agent_number: int) -> List[str]:
     User query: {message}
     """
     prompt = PromptTemplate(input_variables=["message", "agent_number"], template=template)
-    chain = LLMChain(llm=llm_instance, prompt=prompt, model="deepseek-reasoner")
+    chain = LLMChain(llm=llm_instance, prompt=prompt)
 
     response = await asyncio.to_thread(chain.run, message=message, agent_number=agent_number)
     companies = [item.strip() for item in response.split(",") if item.strip()]
