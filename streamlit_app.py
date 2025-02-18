@@ -46,29 +46,33 @@ if "companies" not in st.session_state:
 # 3. Multi-Agent Creation System (Using DeepSeek)
 # ------------------------------------------------------------------------------
 
+deepseek_client = OpenAI(api_key=deepseek_api_key, base_url="https://api.deepseek.com")
+
+# ------------------------------------------------------------------------------
+# 4. Multi-Agent Creation System (Using DeepSeek)
+# ------------------------------------------------------------------------------
+
 async def determine_companies(message: str, agent_number: int) -> List[str]:
     """
     Uses DeepSeek's API to analyze the user query and determine up to {agent_number} relevant perspectives.
     """
-    llm_instance = OpenAI(
-        api_key=deepseek_api_key,
-        base_url="https://api.deepseek.com",
-        model="deepseek-reasoner"
+    response = deepseek_client.chat.completions.create(
+        model="deepseek-reasoner",
+        messages=[
+            {
+                "role": "system",
+                "content": f"Identify a list of up to {agent_number} perspectives or advocates that could respond "
+                           "to the user's problem or question with different solutions. If the user lists different "
+                           "perspectives or sides of an argument, only use their suggestions. If they do not, create "
+                           "them in a way that fosters conversation between diverse perspectives. Return them as "
+                           "comma-separated values."
+            },
+            {"role": "user", "content": message}
+        ],
+        stream=False
     )
 
-    template = f"""
-    Identify a list of up to {agent_number} perspectives or advocates that could respond to the user's 
-    problem or question with different solutions, followed by the name of your AI model. If the user lists different perspectives or sides of an 
-    argument, only use their suggestions. If they do not, create them in a way that fosters conversation 
-    between diverse perspectives. Return them as comma-separated values.
-
-    User query: {message}
-    """
-    prompt = PromptTemplate(input_variables=["message", "agent_number"], template=template)
-    chain = LLMChain(llm=llm_instance, prompt=prompt)
-
-    response = await asyncio.to_thread(chain.run, message=message, agent_number=agent_number)
-    companies = [item.strip() for item in response.split(",") if item.strip()]
+    companies = [item.strip() for item in response.choices[0].message.content.split(",") if item.strip()]
     print(companies)
     return companies[:agent_number]
 
