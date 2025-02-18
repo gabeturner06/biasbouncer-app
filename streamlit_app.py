@@ -189,7 +189,7 @@ async def generate_response(
                     webscrape_results = await scrape_webpage_tool(url)
 
                 # Modify conversation history to include web scrape results
-                updated_conversation = conversation_so_far + f"\n\n[Information from website '{url}':]\n{webscrape_results} | Remember, ALWAYS include as much direct information, figures, or quotes from your web scrape as you can."
+                updated_conversation = conversation_so_far + f"\n\n[Information from website '{url}':]\n{webscrape_results.get('content', 'No content extracted.')} \n Remember, ALWAYS include as much direct information, figures, or quotes from the website as you can."
 
                 # Rerun the agent with new knowledge
                 second_response = await asyncio.to_thread(

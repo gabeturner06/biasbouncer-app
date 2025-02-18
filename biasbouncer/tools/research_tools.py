@@ -27,6 +27,6 @@ async def scrape_webpage_tool(url: str) -> dict:
         # Trim content to 4000 characters
         trimmed_text = extracted_text[:4000]
         
-        return {"url": url, "content": trimmed_text}
+        return {"url": url, "content": trimmed_text}    
     except Exception as e:
         return {"error": f"Scraping failed: {str(e)}"}
