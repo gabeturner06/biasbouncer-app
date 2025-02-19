@@ -154,10 +154,19 @@ async def generate_response(company: str, user_message: str, conversation_so_far
     return response.strip()
 
 async def run_agents(companies: List[str], user_message: str, conversation: List[Dict[str, str]]) -> Dict[str, str]:
+    # Build the initial conversation text from the conversation history.
     conversation_text = "\n".join(f"{msg['role'].upper()}: {msg['content']}" for msg in conversation)
-    tasks = [generate_response(company, user_message, conversation_text, companies) for company in companies]
-    results = await asyncio.gather(*tasks)
-    return dict(zip(companies, results))
+    responses = {}
+    
+    # Process each agent sequentially so they share the updated context.
+    for company in companies:
+        response = await generate_response(company, user_message, conversation_text, companies)
+        responses[company] = response
+        # Update the conversation text with the agent's final answer.
+        conversation_text += f"\n{company.upper()}: {response}"
+        
+    return responses
+
 
 # ------------------------------------------------------------------------------
 # 6. Main Page Layout
