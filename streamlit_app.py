@@ -95,25 +95,24 @@ async def handle_tool_request(tool_data, chain, company, user_message, conversat
     return informed_response
 
 async def generate_response(company: str, user_message: str, conversation_so_far: str, all_perspectives: List[str]) -> str:
-    llm_instance = ChatOpenAI(temperature=0.7, model="gpt-4")
+    llm_instance = ChatOpenAI(temperature=0.5, model="gpt-4")
     template = """
     You're in a casual group brainstorming chat trying to accurately and helpfully respond to a user query {user_message}. 
     You're going to answer from the perspective of a {company}, so you MUST role-play from this perspective to accurately
     respond to the user's query.
-
+    
     Here is the chat history: {conversation_so_far}
-
+    
     Here are all of the perspectives in this conversation with the user: {all_perspectives}. Remember, you're only representing 
     {company}; other agents will represent the others.
-
+    
     Please reply briefly and informally, as if you're a professional brainstorming with friends in a group 
     chat. It is meant to be a quick, collaborative brainstorm session with the user, where you discuss and evaluate ideas 
     created by the user, and briefly explain your reasoning. In other words, your response shouldn't be much longer than the
     question asked by the user. Take note of the other perspectives present, so you can try to differentiate your ideas from theirs. 
     If you're instructed to do nothing, then just reply sure thing and do nothing.
-
+    
     If you need to read, write, or research something online, include a JSON block in your response in the following format:
-
     
     ```json
     {{
@@ -123,7 +122,8 @@ async def generate_response(company: str, user_message: str, conversation_so_far
         "query": "search query here" (only for 'research'),
         "url": "full url of the website you want to scrape" (only for 'scrape_webpage')
     }}
-
+    ```
+    
     If no tool is needed, do not include the JSON block. You can only create .txt files, and ONLY create them when told to.
     You can ONLY use one tool per response, so do NOT include a JSON block in your second response if you have one. ALWAYS include
     as much direct information, figures, or quotes from your web research as you can. List your sources in bullet points in the format:
@@ -134,6 +134,8 @@ async def generate_response(company: str, user_message: str, conversation_so_far
         template=template
     )
     chain = LLMChain(llm=llm_instance, prompt=prompt)
+    
+    # Initial response generation
     response = await asyncio.to_thread(
         chain.run,
         company=company,
@@ -141,15 +143,23 @@ async def generate_response(company: str, user_message: str, conversation_so_far
         conversation_so_far=conversation_so_far,
         all_perspectives=", ".join(all_perspectives)
     )
-    json_match = re.search(r"```json\n(.*?)\n```", response, re.DOTALL)
-    if json_match:
+    
+    # Loop to repeatedly check for a JSON block and process tool requests
+    while True:
+        json_match = re.search(r"```json\n(.*?)\n```", response, re.DOTALL)
+        if not json_match:
+            break  # No JSON block; agent is done requesting tools.
         try:
             tool_data = json.loads(json_match.group(1))
-            tool_response = await handle_tool_request(tool_data, chain, company, user_message, conversation_so_far, all_perspectives)
-            if tool_response:
-                return tool_response
+            new_response = await handle_tool_request(
+                tool_data, chain, company, user_message, conversation_so_far, all_perspectives
+            )
+            if not new_response:
+                break  # No additional response from the tool handler.
+            response = new_response  # Update response and check again.
         except (json.JSONDecodeError, KeyError):
-            return f"Error parsing tool invocation:\n{response}"
+            response = f"Error parsing tool invocation:\n{response}"
+            break
     return response.strip()
 
 async def run_agents(companies: List[str], user_message: str, conversation: List[Dict[str, str]]) -> Dict[str, str]:
