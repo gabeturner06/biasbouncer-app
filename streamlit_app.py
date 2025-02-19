@@ -8,6 +8,7 @@ from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
 from biasbouncer.tools import file_tools, research_tools
 
+
 # ==============================================================================
 # 1. Configuration & Constants
 # ==============================================================================
