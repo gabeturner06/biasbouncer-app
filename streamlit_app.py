@@ -58,7 +58,7 @@ async def handle_tool_request(tool_data, chain, company, user_message, conversat
             filename = tool_data["filename"]
             content = tool_data["content"]
             write_result = await write_tool(filename, content)
-            return f"[Tool Output]: {write_result}"
+            return f"{write_result}"
     elif tool_data["tool"] == "research" and research_tool:
         with st.spinner("Searching the Web"):
             query = tool_data["query"]
