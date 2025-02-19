@@ -1,88 +1,28 @@
 import streamlit as st
-
 import asyncio
 import re
 import json
-from typing import List, Dict, Callable
-
+from typing import List
 from langchain_openai import ChatOpenAI
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
+from biasbouncer.tools import file_tools, research_tools
 
-from biasbouncer.tools.file_tools import read_tool, write_tool, list_files
-from biasbouncer.tools.research_tools import research_tool, scrape_webpage_tool
-
-# ------------------------------------------------------------------------------
-# 1. Configure page layout
-# ------------------------------------------------------------------------------
+# ==============================================================================
+# 1. Configuration & Constants
+# ==============================================================================
 st.set_page_config(layout="wide")
-
-# ------------------------------------------------------------------------------
-# 2. Access API Key(s)
-# ------------------------------------------------------------------------------
-if "OPENAI_API_KEY" not in st.secrets:
-    st.error("OpenAI API key not found in Streamlit secrets.")
-    st.stop()
-
-api_key = st.secrets["OPENAI_API_KEY"]
-
-# ------------------------------------------------------------------------------
-# 2. Session State initialization
-# ------------------------------------------------------------------------------
-if "chat_history" not in st.session_state:
-    # We'll store conversation messages here in the format:
-    # {"role": "user" OR "<company_name>", "content": "..."}opp
-    st.session_state["chat_history"] = []
-
-if "companies" not in st.session_state:
-    # Dynamically generated list of 'perspectives'
-    st.session_state["companies"] = []
-
-llm = ChatOpenAI(temperature=0)  # Base LLM (not used directly below but you can adapt)
-    
-# ------------------------------------------------------------------------------
-# 5. Multi-Agent Creation System
-# ------------------------------------------------------------------------------
-
-async def determine_companies(message: str, agent_number: int) -> List[str]:
-    """
-    Uses an LLM to analyze the user query and determine up to {agent_number} relevant perspectives.
-    """
-    llm_instance = ChatOpenAI(temperature=0, model="gpt-4")
-
-    template = f"""
-    Identify a list of up to {agent_number} of perspectives or advocates that could respond to the user's 
+LOGO_URL = "biasbouncer/images/biasbouncer-logo.png"
+TASK_NAMES = ["Task One", "Task Two", "Task Three", "Task Four"]
+PROMPT_TEMPLATES = {
+    "determine_companies": """Identify a list of up to {agent_number} of perspectives or advocates that could respond to the user's 
     problem or question with different solutions. If the user lists different perspectives or sides of an 
     argument, only use their suggestions. If they do not, create them in a way that will foster a conversation 
     between diverse perspectives. Return them as comma-separated values.
 
-    User query: {message}
-    """
-    prompt = PromptTemplate(input_variables=["message", "agent_number"], template=template)
-    chain = LLMChain(llm=llm_instance, prompt=prompt)
-
-    response = await asyncio.to_thread(chain.run, message=message, agent_number=agent_number)
-    companies = [item.strip() for item in response.split(",") if item.strip()]
-    print(companies)
-    return companies[:agent_number]
-
-async def generate_response(
-    company: str,
-    user_message: str,
-    conversation_so_far: str,
-    all_perspectives: List[str],
-    read_tool: Callable = None,
-    write_tool: Callable = None,
-    research_tool: Callable = None,
-    scrape_webpage_tool: Callable = None
-) -> str:
-    """
-    Generates a short, informal, brainstorming-style response from the perspective of `company`.
-    """
-    llm_instance = ChatOpenAI(temperature=0.7, model="gpt-4")
-
-    template = """
-    You're in a casual group brainstorming chat trying to accurately and helpfully respond to a user query {user_message}. 
+    User query: {message}""",
+    
+    "generate_response": """You're in a casual group brainstorming chat trying to accurately and helpfully respond to a user query {user_message}. 
     You're going to answer from the perspective of a {company}, so you MUST role-play from this perspective to accurately
     respond to the user's query.
 
@@ -112,289 +52,158 @@ async def generate_response(
     If no tool is needed, do not include the JSON block. You can only create .txt files, and ONLY create them when told to.
     You can ONLY use one tool per response, so do NOT include a JSON block in your second response if you have one. ALWAYS include
     as much direct information, figures, or quotes from your web research as you can. List your sources in bullet points in the format:
-    "title," author/organization, website URL (name the link 'Source' always). ALWAYS ask the user before scraping any webpages.
-    """
+    "title," author/organization, website URL (name the link 'Source' always). ALWAYS ask the user before scraping any webpages."""
+}
 
+# ==============================================================================
+# 2. Session State Initialization
+# ==============================================================================
+DEFAULT_STATE = {
+    "chat_history": [],
+    "companies": [],
+    "tasks": {task: {"status": "To Do"} for task in TASK_NAMES}
+}
+for key, value in DEFAULT_STATE.items():
+    st.session_state.setdefault(key, value)
+
+# ==============================================================================
+# 3. Core LLM Functions
+# ==============================================================================
+def create_llm(temp=0, model="gpt-4"):
+    return ChatOpenAI(temperature=temp, model=model, api_key=st.secrets["OPENAI_API_KEY"])
+
+async def determine_companies(message: str, agent_number: int) -> List[str]:
+    llm = create_llm()
+    prompt = PromptTemplate(
+        input_variables=["message", "agent_number"],
+        template=PROMPT_TEMPLATES["determine_companies"]
+    )
+    response = await asyncio.to_thread(LLMChain(llm=llm, prompt=prompt).run,
+                                      message=message, agent_number=agent_number)
+    return [c.strip() for c in response.split(",")][:agent_number]
+
+async def generate_response(company: str, user_message: str, conversation_so_far: str, 
+                           all_perspectives: List[str]) -> str:
+    llm = create_llm(0.7)
     prompt = PromptTemplate(
         input_variables=["company", "user_message", "conversation_so_far", "all_perspectives"],
-        template=template
+        template=PROMPT_TEMPLATES["generate_response"]
     )
-
-    chain = LLMChain(llm=llm_instance, prompt=prompt)
-    response = await asyncio.to_thread(
-        chain.run,
-        company=company,
-        user_message=user_message,
-        conversation_so_far=conversation_so_far,
-        all_perspectives=", ".join(all_perspectives)
-    )
-
-    # Check for JSON tool requests
-    json_match = re.search(r"```json\n(.*?)\n```", response, re.DOTALL)
-    if json_match:
-        try:
-            tool_data = json.loads(json_match.group(1))
-
-            # Handle file reading
-            if tool_data["tool"] == "read" and read_tool:
-                with st.spinner("Reading Files"):
-                    filename = tool_data["filename"]
-                    read_data = await read_tool(filename)
-
-                    # Modify conversation history to include file content
-                    updated_conversation = conversation_so_far + f"\n\n[File '{filename}' was read and contained:]\n{read_data}"
-
-                    # Rerun the agent with the new context
-                    second_response = await asyncio.to_thread(
-                        chain.run,
-                        company=company,
-                        user_message=user_message,
-                        conversation_so_far=updated_conversation,
-                        all_perspectives=", ".join(all_perspectives)
-                    )
-
-                    return second_response
-
-            # Handle file writing
-            elif tool_data["tool"] == "write" and write_tool:
-                with st.spinner("Writing to File"):
-                    filename = tool_data["filename"]
-                    content = tool_data["content"]
-                    write_result = await write_tool(filename, content)
-                    return f"{response}\n\n[Tool Output]: {write_result}"
-
-            # Handle web research
-            elif tool_data["tool"] == "research" and research_tool:
-                with st.spinner("Searching the Web"):
-                    query = tool_data["query"]
-                    search_results = await research_tool(query)
-
-                    # Modify conversation history to include research results
-                    updated_conversation = conversation_so_far + f"\n\n[Research on '{query}':]\n{search_results} | Remember, ALWAYS include as much direct information, figures, or quotes from your web research as you can. List your sources in bullet points with the title of the source and the author of the source."
-
-                    # Rerun the agent with new knowledge
-                    second_response = await asyncio.to_thread(
-                        chain.run,
-                        company=company,
-                        user_message=user_message,
-                        conversation_so_far=updated_conversation,
-                        all_perspectives=", ".join(all_perspectives)
-                    )
-
-                    return second_response
-                
-            elif tool_data["tool"] == "scrape_webpage" and scrape_webpage_tool:
-                with st.spinner("Reading Web Pages"):
-                    url = tool_data["url"]
-                    webscrape_results = await scrape_webpage_tool(url)
-
-                    # Modify conversation history to include web scrape results
-                    updated_conversation = conversation_so_far + f"\n\n[Information from website '{url}':]\n{webscrape_results.get('content', 'No content extracted.')} \n Remember, ALWAYS include as much direct information, figures, or quotes from the website as you can. DO NOT call up the tool again in this response."
-
-                    # Rerun the agent with new knowledge
-                    second_response = await asyncio.to_thread(
-                        chain.run,
-                        company=company,
-                        user_message=user_message,
-                        conversation_so_far=updated_conversation,
-                        all_perspectives=", ".join(all_perspectives)
-                    )
-
-                    return second_response
-
-        except (json.JSONDecodeError, KeyError):
-            return f"Error parsing JSON tool invocation in the response:\n{response}"
-
+    response = await asyncio.to_thread(LLMChain(llm=llm, prompt=prompt).run,
+                                      company=company, user_message=user_message,
+                                      conversation_so_far=conversation_so_far,
+                                      all_perspectives=", ".join(all_perspectives))
+    
+    if json_match := re.search(r"```json\n(.*?)\n```", response, re.DOTALL):
+        return await handle_tools(json_match.group(1), company, user_message, 
+                                conversation_so_far, all_perspectives)
     return response.strip()
 
-
-async def run_agents(
-    companies: List[str],
-    user_message: str,
-    conversation: List[Dict[str, str]],
-    read_tool: Callable = read_tool,
-    write_tool: Callable = write_tool,
-    research_tool: Callable = research_tool,
-    scrape_webpage_tool: Callable = scrape_webpage_tool
-) -> Dict[str, str]:
-    conversation_text = "\n".join(
-        f"{msg['role'].upper()}: {msg['content']}" for msg in conversation
-    )
-
-    tasks = [
-        generate_response(
-            company=company,
-            user_message=user_message,
-            conversation_so_far=conversation_text,
-            all_perspectives=companies,
-            read_tool=read_tool,
-            write_tool=write_tool,
-            research_tool=research_tool,
-            scrape_webpage_tool=scrape_webpage_tool
-        )
-        for company in companies
-    ]
-    results = await asyncio.gather(*tasks)
-    return dict(zip(companies, results))
-
-
-# ------------------------------------------------------------------------------
-# 6. Main Page Layout
-# ------------------------------------------------------------------------------
-
-LOGO_URL_LARGE = "biasbouncer/images/biasbouncer-logo.png"
-
-st.logo(
-    image=LOGO_URL_LARGE,
-    link="https://biasbouncer.com",
-    size="large"
-)
-
-st.markdown("<h1 style='text-align: center;'><span style='color: red;'>BiasBouncer</span></h1>", unsafe_allow_html=True)
-st.markdown("<h3 style='text-align: center;'>Team WorkBench</h3>", unsafe_allow_html=True)
-
-st.divider()
-
-@st.dialog("How BiasBouncer Works")
-def explain():
-    st.divider()
-    st.write("Every idea begins to take shape with a Brainstorming session. Click the sidebar arrow at the top left-hand corner of the page. Ask a question or pitch your idea to BiasBouncer in the Brainstorm Chat. From there, BiasBouncer will explore the different perspectives needed to accurately address the complications of your idea. Each agent will respond to you casually, outlining their informed thoughts or spitballing new ideas. Keep brainstorming with your team the same way you would with your friends or work partners. You can also create files in the chat to store your ideas. When you have a plan put together, you can begin orchestrating your work.")
-    st.write("BiasBouncer will instruct agents to simultaneously perform different tasks like research, coding, reviewing, and more. Those tasks will populate in the 'To Do' column and gradually move to the right, so you can monitor their progress and review the task details. You can always chat with the agents if they have questions about their work or you want to add feedback. Once all the tasks have ended up in the 'Done' column, your finished project will be ready to download!")
-    st.caption("As of the last update on 1/30/2025, the Brainstorm Chat with file-creation and web research capabilities are currently operational and available. Team WorkBench functionality coming soon.")
-if st.button("How it Works", type="secondary"):
-    explain()
-
-col1, col2, col3, col4 = st.columns(4, border=True, gap="small")
-
-
-with col1:
-    st.subheader("To Do")
-    @st.dialog("Task One")
-    def view():
-        st.html("<ul><li><h3>Agents: --</h3></li><li><h3>Tools: --</h3></li><li><h3>Description: --</h3></li><li><h3>Status: To Do</h3></li></ul>")
-        st.markdown("##")
-        st.write("Once your agents have created a plan in the Chat, the Tasks they'll work to complete will populate here. This is where you will be able to see the details of each task. If an agent has a question regarding their Task, they will ask you in the Chat.")
-    if st.button("Task One", use_container_width=True, type="primary"):
-        view()
+async def handle_tools(json_str: str, *args) -> str:
+    try:
+        tool_data = json.loads(json_str)
+        handler = {
+            "read": handle_read,
+            "write": handle_write,
+            "research": handle_research,
+            "scrape_webpage": handle_scrape
+        }[tool_data["tool"]]
         
-    @st.dialog("Task Two")
-    def view():
-        st.html("<ul><li><h3>Agents: --</h3></li><li><h3>Tools: --</h3></li><li><h3>Description: --</h3></li><li><h3>Status: To Do</h3></li></ul>")
-        st.markdown("##")
-        st.write("Once your agents have created a plan in the Chat, the Tasks they'll work to complete will populate here. This is where you will be able to see the details of each task. If an agent has a question regarding their Task, they will ask you in the Chat.")
-    if st.button("Task Two", use_container_width=True, type="primary"):
-        view()
-
-    @st.dialog("Task Three")
-    def view():
-        st.html("<ul><li><h3>Agents: --</h3></li><li><h3>Tools: --</h3></li><li><h3>Description: --</h3></li><li><h3>Status: To Do</h3></li></ul>")
-        st.markdown("##")
-        st.write("Once your agents have created a plan in the Chat, the Tasks they'll work to complete will populate here. This is where you will be able to see the details of each task. If an agent has a question regarding their Task, they will ask you in the Chat.")
-    if st.button("Task Three", use_container_width=True, type="primary"):
-        view()
-        
-    @st.dialog("Task Four")
-    def view():
-        st.html("<ul><li><h3>Agents: --</h3></li><li><h3>Tools: --</h3></li><li><h3>Description: --</h3></li><li><h3>Status: To Do</h3></li></ul>")
-        st.markdown("##")
-        st.write("Once your agents have created a plan in the Chat, the Tasks they'll work to complete will populate here. This is where you will be able to see the details of each task. If an agent has a question regarding their Task, they will ask you in the Chat.")
-    if st.button("Task Four", use_container_width=True, type="primary"):
-        view()
-
-with col2:
-    st.subheader("In Progress")
-    st.markdown("##")
-
-with col3:
-    st.subheader("In Review")
-    st.markdown("##")
-
-with col4:
-    st.subheader("Done")
-    st.markdown("##")
-
-st.divider()
-
-st.subheader("Agent Files")
-
-col1, col2 = st.columns([0.4, 0.6])
-
-with col1:
-    if st.button("Refresh Files", use_container_width=True):
-        st.rerun()
-
-    files = list_files()
-
-    if files:
-        selected_file = st.selectbox("Select a file:", files)
-
-        # Define the modal for viewing file content
-        @st.dialog(f"{selected_file}")
-        def view_file():
-            with st.spinner("Reading file..."):
-                file_content = asyncio.run(read_tool(selected_file))
+        with st.spinner(f"Executing {tool_data['tool']} tool..."):
+            return await handler(tool_data, *args)
             
-            st.text_area("File Content", file_content, height=400)
+    except (json.JSONDecodeError, KeyError) as e:
+        return f"Tool error: {str(e)} in:\n{json_str}"
 
-            # Add a download button
-            st.download_button(
-                label="Download File",
-                data=file_content,  # File content as data
-                file_name=selected_file,  # Keep the original filename
-                mime="text/plain",  # Set appropriate MIME type
-            )
+# ==============================================================================
+# 4. Tool Handlers (Refactored)
+# ==============================================================================
+async def handle_read(data, company, user_message, conv, perspectives):
+    content = await file_tools.read_tool(data["filename"])
+    updated_conv = f"{conv}\n[File content]:\n{content}"
+    return await regenerate_response(company, user_message, updated_conv, perspectives)
 
-        if st.button("View File", use_container_width=True, type="secondary"):
-            view_file()
-    else:
-        st.write("No files created.")
+async def handle_write(data, *args):
+    await file_tools.write_tool(data["filename"], data["content"])
+    return f"File {data['filename']} updated"
 
-# ------------------------------------------------------------------------------
-# 7. Sidebar Chat
-# ------------------------------------------------------------------------------
-with st.sidebar:
-    st.title("Brainstorm Chat")
+async def handle_research(data, company, user_message, conv, perspectives):
+    results = await research_tools.research_tool(data["query"])
+    updated_conv = f"{conv}\n[Research]:\n{results}"
+    return await regenerate_response(company, user_message, updated_conv, perspectives)
 
-    messages_container = st.container()
+async def handle_scrape(data, *args):
+    results = await research_tools.scrape_webpage_tool(data["url"])
+    return f"Scraped content: {results.get('content', 'No data')}"
 
-    # Display past conversation in the side bar
-    with messages_container:
-        for msg in st.session_state["chat_history"]:
-            role = msg["role"]
-            content = msg["content"]
+async def regenerate_response(company, user_message, conv, perspectives):
+    return await generate_response(company, user_message, conv, perspectives)
 
-            # If role is "user", show user bubble
-            if role == "user":
-                st.chat_message("user").write(content)
-            else:
-                # If role is one of the agent names, we show it as "assistant"
-                # but label it with the role name
-                st.chat_message("assistant").write(f"**{role}**: {content}")
+# ==============================================================================
+# 5. UI Components
+# ==============================================================================
+def main_layout():
+    st.logo(LOGO_URL, link="https://biasbouncer.com")
+    st.markdown("<h1 style='text-align: center;'><span style='color: red;'>BiasBouncer</span></h1>", 
+               unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align: center;'>Team WorkBench</h3>", unsafe_allow_html=True)
+    st.divider()
+    
+    cols = st.columns(4, gap="small")
+    statuses = ["To Do", "In Progress", "In Review", "Done"]
+    for col, status in zip(cols, statuses):
+        with col:
+            st.subheader(status)
+            for task, details in st.session_state.tasks.items():
+                if details["status"] == status:
+                    render_task_button(task)
 
-    # Chat input at the bottom
-    user_input = st.chat_input("Work with the Agents")
-    agent_number = st.slider("Number of Agents", 2, 6, 4)
-    if user_input:
-        # Add user's message to the chat
-        st.session_state["chat_history"].append({"role": "user", "content": user_input})
-        with messages_container:
-            st.chat_message("user").write(user_input)
+def render_task_button(task):
+    @st.dialog(task)
+    def task_dialog():
+        st.write(f"Details for {task}")
+        # Add actual task details here
+    if st.button(task, use_container_width=True, type="primary"):
+        task_dialog()
 
-        # If we haven't determined perspectives yet, do so now
-        with st.spinner("Preparing Perspectives..."):
-            if not st.session_state["companies"]:
-                # Pass agent_number along with the user_input
-                st.session_state["companies"] = asyncio.run(determine_companies(user_input, agent_number))
+# ==============================================================================
+# 6. Chat System
+# ==============================================================================
+def chat_sidebar():
+    with st.sidebar:
+        st.title("Brainstorm Chat")
+        for msg in st.session_state.chat_history:
+            role = "user" if msg["role"] == "user" else "assistant"
+            st.chat_message(role).write(f"{msg['role']}: {msg['content']}")
+        
+        if user_input := st.chat_input("Work with the Agents"):
+            process_user_input(user_input)
 
+async def process_user_input(user_input):
+    st.session_state.chat_history.append({"role": "user", "content": user_input})
+    
+    if not st.session_state.companies:
+        st.session_state.companies = await determine_companies(
+            user_input, st.sidebar.slider("Number of Agents", 2, 6, 4)
+        )
+    
+    conversation = "\n".join(f"{m['role']}: {m['content']}" 
+                            for m in st.session_state.chat_history)
+    responses = await asyncio.gather(*[
+        generate_response(c, user_input, conversation, st.session_state.companies) 
+        for c in st.session_state.companies
+    ])
+    
+    for company, response in zip(st.session_state.companies, responses):
+        st.session_state.chat_history.append({"role": company, "content": response})
 
-        # Run all agents concurrently
-        with st.spinner("Preparing Responses..."):
-            responses = asyncio.run(
-                run_agents(st.session_state["companies"], user_input, st.session_state["chat_history"])
-            )
-
-        # Append and display each agent's response
-        for company, text in responses.items():
-            st.session_state["chat_history"].append({"role": company, "content": text})
-            with messages_container:
-                st.chat_message("assistant").write(f"**{company}**: {text}")
+# ==============================================================================
+# 7. Main Execution
+# ==============================================================================
+if __name__ == "__main__":
+    if "OPENAI_API_KEY" not in st.secrets:
+        st.error("Missing OpenAI API key")
+        st.stop()
+        
+    main_layout()
+    chat_sidebar()
