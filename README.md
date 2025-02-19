@@ -22,6 +22,7 @@ BiasBouncer will instruct agents to simultaneously perform different tasks like 
 ## 🆕 **Latest Updates**
 - **January 22:** Launch of BiasBouncer
 - **January 30:** Agentic Read, Write, and Research Tools Added
+- **February 18:** Agentic Framework Simplified (25% Reduced Bulk) - Faster and Better Tool Calling
 
 ---
 
