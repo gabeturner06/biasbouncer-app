@@ -60,45 +60,38 @@ async def determine_companies(message: str, agent_number: int) -> List[str]:
     companies = [item.strip() for item in response.split(",") if item.strip()]
     return companies[:agent_number]
 
-async def handle_tool_request(tool_data, chain, company, user_message, conversation_so_far, all_perspectives):
-    updated_conversation = conversation_so_far
+async def handle_tool_request(tool_data, conversation):
+    # Update the conversation with the results of the tool execution.
     if tool_data["tool"] == "read" and read_tool:
         with st.spinner("Reading Files"):
             filename = tool_data["filename"]
             read_data = await read_tool(filename)
-            updated_conversation += f"\n\n[File '{filename}' content:]\n{read_data}.\n You can now move on to the next task."
+            conversation += f"\n\n[Executed read on '{filename}': {read_data}]\nTool finished."
     elif tool_data["tool"] == "write" and write_tool:
         with st.spinner("Writing to File"):
             filename = tool_data["filename"]
             content = tool_data["content"]
             write_result = await write_tool(filename, content)
-            updated_conversation += f"\n\n[Tool Output: {write_result}].\n You can now move on to the next task."
+            conversation += f"\n\n[Executed write on '{filename}': {write_result}]\nTool finished."
     elif tool_data["tool"] == "research" and research_tool:
         with st.spinner("Searching the Web"):
             query = tool_data["query"]
             search_results = await research_tool(query)
-            updated_conversation += f"\n\n[Research on '{query}':]\n{search_results}.\n You can now move on to the next task."
+            conversation += f"\n\n[Executed research on '{query}': {search_results}]\nTool finished."
     elif tool_data["tool"] == "scrape_webpage" and scrape_webpage_tool:
-        with st.spinner("Reading Web Pages"):
+        with st.spinner("Scraping Webpage"):
             url = tool_data["url"]
             scrape_results = await scrape_webpage_tool(url)
-            updated_conversation += f"\n\n[Webpage '{url}' info:]\n{scrape_results.get('content', 'No content.')}.\n You can now move on to the next task."
+            conversation += f"\n\n[Executed scrape on '{url}': {scrape_results.get('content', 'No content.') }]\nTool finished."
     else:
-        return None
-    informed_response = await asyncio.to_thread(
-        chain.run,
-        company=company,
-        user_message=user_message,
-        conversation_so_far=updated_conversation,
-        all_perspectives=", ".join(all_perspectives)
-    )
-    return informed_response
+        conversation += "\n\n[Unknown tool requested or tool not available.]"
+    return conversation
 
 async def generate_response(company: str, user_message: str, conversation_so_far: str, all_perspectives: List[str]) -> str:
     llm_instance = ChatOpenAI(temperature=0.7, model="gpt-4")
     template = """
     You're an AI agent in a professional group brainstorming chat trying to accurately and informatively respond to a user query {user_message}.
-    You can use tools recursively until you are confudent that your final answer will satisfy the user query. 
+    You can use tools recursively until you are confident that your final answer will satisfy the user query. 
     You're going to answer from the perspective of a {company}, so you MUST role-play from this perspective to accurately
     respond to the user's query. If you're asked to do nothing, then say sure thing.
     
@@ -131,32 +124,33 @@ async def generate_response(company: str, user_message: str, conversation_so_far
     )
     chain = LLMChain(llm=llm_instance, prompt=prompt)
     
-    # Generate the initial response.
-    response = await asyncio.to_thread(
-        chain.run,
-        company=company,
-        user_message=user_message,
-        conversation_so_far=conversation_so_far,
-        all_perspectives=", ".join(all_perspectives)
-    )
+    # Use a mutable conversation variable that we update.
+    conversation = conversation_so_far
+    max_iterations = 5  # safeguard against infinite loops
     
-    # Loop until the agent stops including tool instructions.
-    while True:
-        json_match = re.search(r"```json\n(.*?)\n```", response, re.DOTALL)
-        if not json_match:
-            # No JSON block means no tool is needed: final answer.
-            break
-        try:
-            tool_data = json.loads(json_match.group(1))
-        except (json.JSONDecodeError, KeyError):
-            response = f"Error parsing tool invocation:\n{response}"
-            break
-        new_response = await handle_tool_request(
-            tool_data, chain, company, user_message, conversation_so_far, all_perspectives
+    for _ in range(max_iterations):
+        response = await asyncio.to_thread(
+            chain.run,
+            company=company,
+            user_message=user_message,
+            conversation_so_far=conversation,
+            all_perspectives=", ".join(all_perspectives)
         )
-        if not new_response:
-            break
-        response = new_response
+        json_match = re.search(r"```json\n(.*?)\n```", response, re.DOTALL)
+        if json_match:
+            try:
+                tool_data = json.loads(json_match.group(1))
+            except (json.JSONDecodeError, KeyError):
+                response = f"Error parsing tool invocation:\n{response}"
+                break
+            # Update the conversation with the tool execution results.
+            conversation = await handle_tool_request(tool_data, conversation)
+            # Loop again: the agent sees the updated conversation and should now omit tool calls if they're done.
+            continue
+        else:
+            # No JSON block detected: this is the final answer.
+            return response.strip()
+    # If max_iterations reached, return the last generated response.
     return response.strip()
 
 async def run_agents(companies: List[str], user_message: str, conversation: List[Dict[str, str]]) -> Dict[str, str]:
