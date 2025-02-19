@@ -47,7 +47,7 @@ llm = ChatOpenAI(temperature=0)  # Base LLM (not used directly below but you can
 def get_conversation_so_far() -> str:
     return "\n".join([f"{msg['role']}: {msg['content']}" for msg in st.session_state["chat_history"]])
 
-async def determine_companies(user_message: str, agent_number: int) -> List[Dict[str, str]]:
+async def determine_agents(user_message: str, agent_number: int) -> List[Dict[str, str]]:
     llm_instance = ChatOpenAI(temperature=0, model="gpt-4")
     template = f"""
     Identify up to {agent_number} agents that could respond to the user's query. 
@@ -159,7 +159,7 @@ async def speaker_agent(agent_name: str, user_message: str, worker_results: str 
     return await asyncio.to_thread(chain.run, agent_name=agent_name, user_message=user_message, conversation_so_far=conversation_so_far, worker_results=worker_results)
 
 async def run_agents(user_message: str, agent_number: int):
-    agents = await determine_companies(user_message, agent_number)
+    agents = await determine_agents(user_message, agent_number)
     responses = {}
     
     for agent in agents:
@@ -296,15 +296,15 @@ with st.sidebar:
 
         # If we haven't determined perspectives yet, do so now
         with st.spinner("Preparing Perspectives..."):
-            if not st.session_state["companies"]:
+            if not st.session_state["agents"]:
                 # Pass agent_number along with the user_input
-                st.session_state["companies"] = asyncio.run(determine_companies(user_input, agent_number))
+                st.session_state["agents"] = asyncio.run(determine_agents(user_input, agent_number))
 
 
         # Run all agents concurrently
         with st.spinner("Preparing Responses..."):
             responses = asyncio.run(
-                run_agents(st.session_state["companies"], user_input, st.session_state["chat_history"])
+                run_agents(st.session_state["agents"], user_input, st.session_state["chat_history"])
             )
 
         # Append and display each agent's response
