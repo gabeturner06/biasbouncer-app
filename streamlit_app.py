@@ -34,9 +34,9 @@ if "chat_history" not in st.session_state:
     # {"role": "user" OR "<company_name>", "content": "..."}opp
     st.session_state["chat_history"] = []
 
-if "companies" not in st.session_state:
+if "agents" not in st.session_state:
     # Dynamically generated list of 'perspectives'
-    st.session_state["companies"] = []
+    st.session_state["agents"] = []
 
 llm = ChatOpenAI(temperature=0)  # Base LLM (not used directly below but you can adapt)
     
