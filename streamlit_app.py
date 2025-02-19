@@ -95,42 +95,37 @@ async def handle_tool_request(tool_data, chain, company, user_message, conversat
     return informed_response
 
 async def generate_response(company: str, user_message: str, conversation_so_far: str, all_perspectives: List[str]) -> str:
-    llm_instance = ChatOpenAI(temperature=0.7, model="gpt-4")
+    llm_instance = ChatOpenAI(temperature=0.5, model="gpt-4")
     template = """
+    INSTRUCTIONS FOR RESPONDING IN THE CHAT:
     You're in a casual group brainstorming chat trying to accurately and helpfully respond to a user query {user_message}. 
-    You're going to answer from the perspective of a {company}, so you MUST role-play from this perspective to accurately
-    respond to the user's query.
+    You're going to answer from the perspective of a {agent_name}, so you MUST role-play from this perspective to accurately
+    respond to the user's query. Take note of the other perspectives present, so you can try to differentiate your ideas from theirs. 
+    If you're instructed to do nothing, then just reply sure thing and do nothing.
 
     Here is the chat history: {conversation_so_far}
 
     Here are all of the perspectives in this conversation with the user: {all_perspectives}. Remember, you're only representing 
     {company}; other agents will represent the others.
 
-    Please reply briefly and informally, as if you're a professional brainstorming with friends in a group 
-    chat. It is meant to be a quick, collaborative brainstorm session with the user, where you discuss and evaluate ideas 
-    created by the user, and briefly explain your reasoning. In other words, your response shouldn't be much longer than the
-    question asked by the user. Take note of the other perspectives present, so you can try to differentiate your ideas from theirs. 
-    If you're instructed to do nothing, then just reply sure thing and do nothing.
+    =======================================
 
-    If you need to read, write, or research something online, include a JSON block in your response in the following format:
+    INSTRUCTIONS FOR TOOL USE:
+    If you're asked to use tools, do not respond as you would in the chat until your FINAL ANSWER. Only output a JSON block to save token usage.
+    You can read or write, or research or scrape a webpage something online by writing a JSON block as your response in the following format:
 
     ```json
-    [
         {{
             "tool": "read", "write", "research" or "scrape_webpage",
             "filename": "filename" (only for read/write, do NOT include any other filepaths or folders),
             "content": "(Your agent name): content-to-write" (only for 'write'),
             "query": "search query here" (only for 'research'),
             "url": "full url of the website you want to scrape" (only for 'scrape_webpage')
-        }},
-        ...
-    ]
-    ```
+        }}
 
     If no tool is needed, do not include the JSON block. You can only create .txt files, and ONLY create them when told to.
     ALWAYS include as much direct information, figures, or quotes from your web research as you can. List your sources in bullet points in the format:
-    "title," author/organization, website URL (name the link 'Source' always). When you've finished using your tools, don't include any JSON block
-    and inform the user briefly about your findings, what you've done, and respond to anything else they've asked.
+    "title," author/organization, website URL (name the link 'Source' always).
     """
     prompt = PromptTemplate(
         input_variables=["company", "user_message", "conversation_so_far", "all_perspectives"],
