@@ -114,19 +114,21 @@ async def generate_response(company: str, user_message: str, conversation_so_far
 
     If you need to read, write, or research something online, include a JSON block in your response in the following format:
 
-    
     ```json
-    {{
-        "tool": "read", "write", "research" or "scrape_webpage",
-        "filename": "filename" (only for read/write, do NOT include any other filepaths or folders),
-        "content": "(Your agent name): content-to-write" (only for 'write'),
-        "query": "search query here" (only for 'research'),
-        "url": "full url of the website you want to scrape" (only for 'scrape_webpage')
-    }}
+    [
+        {{
+            "tool": "read", "write", "research" or "scrape_webpage",
+            "filename": "filename" (only for read/write, do NOT include any other filepaths or folders),
+            "content": "(Your agent name): content-to-write" (only for 'write'),
+            "query": "search query here" (only for 'research'),
+            "url": "full url of the website you want to scrape" (only for 'scrape_webpage')
+        }},
+        ...
+    ]
+    ```
 
     If no tool is needed, do not include the JSON block. You can only create .txt files, and ONLY create them when told to.
-    You can ONLY use one tool per response, so do NOT include a JSON block in your second response if you have one. ALWAYS include
-    as much direct information, figures, or quotes from your web research as you can. List your sources in bullet points in the format:
+    ALWAYS include as much direct information, figures, or quotes from your web research as you can. List your sources in bullet points in the format:
     "title," author/organization, website URL (name the link 'Source' always). ALWAYS ask the user before scraping any webpages.
     """
     prompt = PromptTemplate(
@@ -134,22 +136,43 @@ async def generate_response(company: str, user_message: str, conversation_so_far
         template=template
     )
     chain = LLMChain(llm=llm_instance, prompt=prompt)
+
+    updated_conversation = conversation_so_far
     response = await asyncio.to_thread(
         chain.run,
         company=company,
         user_message=user_message,
-        conversation_so_far=conversation_so_far,
+        conversation_so_far=updated_conversation,
         all_perspectives=", ".join(all_perspectives)
     )
-    json_match = re.search(r"```json\n(.*?)\n```", response, re.DOTALL)
-    if json_match:
+
+    while True:
+        json_match = re.search(r"```json\n(.*?)\n```", response, re.DOTALL)
+        if not json_match:
+            break  # No more tools needed
+
         try:
-            tool_data = json.loads(json_match.group(1))
-            tool_response = await handle_tool_request(tool_data, chain, company, user_message, conversation_so_far, all_perspectives)
-            if tool_response:
-                return tool_response
+            tool_data_list = json.loads(json_match.group(1))
+            if not isinstance(tool_data_list, list):
+                tool_data_list = [tool_data_list]  # Convert to list if single dict
+
+            for tool_data in tool_data_list:
+                tool_response = await handle_tool_request(tool_data, chain, company, user_message, updated_conversation, all_perspectives)
+                if tool_response:
+                    updated_conversation += f"\n\n{tool_response}"
+
+            # Rerun the agent with updated information
+            response = await asyncio.to_thread(
+                chain.run,
+                company=company,
+                user_message=user_message,
+                conversation_so_far=updated_conversation,
+                all_perspectives=", ".join(all_perspectives)
+            )
+
         except (json.JSONDecodeError, KeyError):
             return f"Error parsing tool invocation:\n{response}"
+
     return response.strip()
 
 async def run_agents(companies: List[str], user_message: str, conversation: List[Dict[str, str]]) -> Dict[str, str]:
