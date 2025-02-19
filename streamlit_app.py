@@ -95,7 +95,7 @@ async def handle_tool_request(tool_data, chain, company, user_message, conversat
     return informed_response
 
 async def generate_response(company: str, user_message: str, conversation_so_far: str, all_perspectives: List[str]) -> str:
-    llm_instance = ChatOpenAI(temperature=0.5, model="gpt-4")
+    llm_instance = ChatOpenAI(temperature=0.7, model="gpt-4")
     template = """
     You're in a casual group brainstorming chat trying to accurately and helpfully respond to a user query {user_message}. 
     You're going to answer from the perspective of a {company}, so you MUST role-play from this perspective to accurately
@@ -135,7 +135,7 @@ async def generate_response(company: str, user_message: str, conversation_so_far
     )
     chain = LLMChain(llm=llm_instance, prompt=prompt)
     
-    # Initial response generation
+    # Generate the initial response.
     response = await asyncio.to_thread(
         chain.run,
         company=company,
@@ -144,22 +144,23 @@ async def generate_response(company: str, user_message: str, conversation_so_far
         all_perspectives=", ".join(all_perspectives)
     )
     
-    # Loop to repeatedly check for a JSON block and process tool requests
+    # Loop until the agent stops including tool instructions.
     while True:
         json_match = re.search(r"```json\n(.*?)\n```", response, re.DOTALL)
         if not json_match:
-            break  # No JSON block; agent is done requesting tools.
+            # No JSON block means no tool is needed: final answer.
+            break
         try:
             tool_data = json.loads(json_match.group(1))
-            new_response = await handle_tool_request(
-                tool_data, chain, company, user_message, conversation_so_far, all_perspectives
-            )
-            if not new_response:
-                break  # No additional response from the tool handler.
-            response = new_response  # Update response and check again.
         except (json.JSONDecodeError, KeyError):
             response = f"Error parsing tool invocation:\n{response}"
             break
+        new_response = await handle_tool_request(
+            tool_data, chain, company, user_message, conversation_so_far, all_perspectives
+        )
+        if not new_response:
+            break
+        response = new_response
     return response.strip()
 
 async def run_agents(companies: List[str], user_message: str, conversation: List[Dict[str, str]]) -> Dict[str, str]:
