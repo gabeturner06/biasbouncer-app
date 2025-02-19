@@ -153,7 +153,10 @@ async def generate_response(company: str, user_message: str, conversation_so_far
     return response.strip()
 
 async def run_agents(companies: List[str], user_message: str, conversation: List[Dict[str, str]]) -> Dict[str, str]:
+    max_length = 5000  # Character limit
     conversation_text = "\n".join(f"{msg['role'].upper()}: {msg['content']}" for msg in conversation)
+    if len(conversation_text) > max_length:
+        conversation_text = conversation_text[-max_length:]
     tasks = [generate_response(company, user_message, conversation_text, companies) for company in companies]
     results = await asyncio.gather(*tasks)
     return dict(zip(companies, results))
