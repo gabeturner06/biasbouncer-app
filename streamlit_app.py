@@ -129,7 +129,8 @@ async def generate_response(company: str, user_message: str, conversation_so_far
 
     If no tool is needed, do not include the JSON block. You can only create .txt files, and ONLY create them when told to.
     ALWAYS include as much direct information, figures, or quotes from your web research as you can. List your sources in bullet points in the format:
-    "title," author/organization, website URL (name the link 'Source' always).
+    "title," author/organization, website URL (name the link 'Source' always). When you've finished using your tools, don't include any JSON block
+    and inform the user briefly about your findings, what you've done, and respond to anything else they've asked.
     """
     prompt = PromptTemplate(
         input_variables=["company", "user_message", "conversation_so_far", "all_perspectives"],
