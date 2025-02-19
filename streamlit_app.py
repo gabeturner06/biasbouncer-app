@@ -79,7 +79,7 @@ async def handle_tool_request(tool_data, chain, company, user_message, conversat
             search_results = await research_tool(query)
             updated_conversation += f"\n\n[Research on '{query}':]\n{search_results}"
     elif tool_data["tool"] == "scrape_webpage" and scrape_webpage_tool:
-        with st.spinner("Scraping Web Page"):
+        with st.spinner("Reading Web Pages"):
             url = tool_data["url"]
             scrape_results = await scrape_webpage_tool(url)
             updated_conversation += f"\n\n[Webpage '{url}' info:]\n{scrape_results.get('content', 'No content.')}"
