@@ -66,23 +66,23 @@ async def handle_tool_request(tool_data, chain, company, user_message, conversat
         with st.spinner("Reading Files"):
             filename = tool_data["filename"]
             read_data = await read_tool(filename)
-            updated_conversation += f"\n\n[File '{filename}' content:]\n{read_data}"
+            updated_conversation += f"\n\n[File '{filename}' content:]\n{read_data}.\n You can now move on to the next task."
     elif tool_data["tool"] == "write" and write_tool:
         with st.spinner("Writing to File"):
             filename = tool_data["filename"]
             content = tool_data["content"]
             write_result = await write_tool(filename, content)
-            return f"{write_result}"
+            updated_conversation += f"\n\n[Tool Output: {write_result}].\n You can now move on to the next task."
     elif tool_data["tool"] == "research" and research_tool:
         with st.spinner("Searching the Web"):
             query = tool_data["query"]
             search_results = await research_tool(query)
-            updated_conversation += f"\n\n[Research on '{query}':]\n{search_results}"
+            updated_conversation += f"\n\n[Research on '{query}':]\n{search_results}.\n You can now move on to the next task."
     elif tool_data["tool"] == "scrape_webpage" and scrape_webpage_tool:
         with st.spinner("Reading Web Pages"):
             url = tool_data["url"]
             scrape_results = await scrape_webpage_tool(url)
-            updated_conversation += f"\n\n[Webpage '{url}' info:]\n{scrape_results.get('content', 'No content.')}"
+            updated_conversation += f"\n\n[Webpage '{url}' info:]\n{scrape_results.get('content', 'No content.')}.\n You can now move on to the next task."
     else:
         return None
     informed_response = await asyncio.to_thread(
@@ -97,22 +97,19 @@ async def handle_tool_request(tool_data, chain, company, user_message, conversat
 async def generate_response(company: str, user_message: str, conversation_so_far: str, all_perspectives: List[str]) -> str:
     llm_instance = ChatOpenAI(temperature=0.7, model="gpt-4")
     template = """
-    You're in a casual group brainstorming chat trying to accurately and helpfully respond to a user query {user_message}. 
+    You're an AI agent in a professional group brainstorming chat trying to accurately and informatively respond to a user query {user_message}.
+    You can use tools recursively until you are confudent that your final answer will satisfy the user query. 
     You're going to answer from the perspective of a {company}, so you MUST role-play from this perspective to accurately
-    respond to the user's query.
+    respond to the user's query. If you're asked to do nothing, then say sure thing.
     
     Here is the chat history: {conversation_so_far}
     
-    Here are all of the perspectives in this conversation with the user: {all_perspectives}. Remember, you're only representing 
+    Here are all of the perspectives in this conversation with the user: {all_perspectives}. Remember, you're only representing a/an
     {company}; other agents will represent the others.
-    
-    Please reply briefly and informally, as if you're a professional brainstorming with friends in a group 
-    chat. It is meant to be a quick, collaborative brainstorm session with the user, where you discuss and evaluate ideas 
-    created by the user, and briefly explain your reasoning. In other words, your response shouldn't be much longer than the
-    question asked by the user. Take note of the other perspectives present, so you can try to differentiate your ideas from theirs. 
-    If you're instructed to do nothing, then just reply sure thing and do nothing.
-    
-    If you need to read, write, or research something online, include a JSON block in your response in the following format:
+
+    First, make a plan of what tools you need to use to accurately respond to the prompt. In any responses where you decide to use a tool, 
+    the user will not see these, so do not be verbose (three sentence maximum). If you need to read or write files, or research or scrape something 
+    online, include a JSON block in your response in the following format:
     
     ```json
     {{
@@ -124,10 +121,9 @@ async def generate_response(company: str, user_message: str, conversation_so_far
     }}
     ```
     
-    If no tool is needed, do not include the JSON block. You can only create .txt files, and ONLY create them when told to.
-    You can ONLY use one tool per response, so do NOT include a JSON block in your second response if you have one. ALWAYS include
-    as much direct information, figures, or quotes from your web research as you can. List your sources in bullet points in the format:
-    "title," author/organization, website URL (name the link 'Source' always). ALWAYS ask the user before scraping any webpages.
+    When you are done using tools, answer as you would in the brainstorming chat and do not include any JSON block. You can only create 
+    .txt files. ALWAYS include as much direct information, figures, or quotes from your web research as you can. List your sources in your final answer in 
+    bullet points in the format: "title," author/organization, website URL (name the link 'Source' always). Assume that you are allowed to scrape any web page.
     """
     prompt = PromptTemplate(
         input_variables=["company", "user_message", "conversation_so_far", "all_perspectives"],
