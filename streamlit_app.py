@@ -99,7 +99,7 @@ async def generate_response(company: str, user_message: str, conversation_so_far
     template = """
     INSTRUCTIONS FOR RESPONDING IN THE CHAT:
     You're in a casual group brainstorming chat trying to accurately and helpfully respond to a user query {user_message}. 
-    You're going to answer from the perspective of a {agent_name}, so you MUST role-play from this perspective to accurately
+    You're going to answer from the perspective of a {company}, so you MUST role-play from this perspective to accurately
     respond to the user's query. Take note of the other perspectives present, so you can try to differentiate your ideas from theirs. 
     If you're instructed to do nothing, then just reply sure thing and do nothing.
 
