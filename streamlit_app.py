@@ -221,12 +221,18 @@ async def run_worker_agents(companies: List[str], user_message: str) -> Dict[str
     results = await asyncio.gather(*(worker_wrapper(company) for company in companies))
     return dict(results)  # Returns {"VC Investor": [...], "Tech Founder": [...], "Startup Lawyer": [...]} 
 
-async def run_speaker_agents(companies: List[str],  user_message: str, worker_results: str, conversation: List[Dict[str, str]]) -> Dict[str, str]:
-    conversation_text = "\n".join(f"{msg['role'].upper()}: {msg['content']}" for msg in conversation)
+async def run_speaker_agents(companies: List[str], user_message: str, worker_results: str, conversation: List[Dict[str, str]]) -> Dict[str, str]:
+    # Ensure conversation is a list of dictionaries
+    if not isinstance(conversation, list) or not all(isinstance(msg, dict) for msg in conversation):
+        print("ERROR: `conversation` is not a valid list of dictionaries!")
+        conversation = []  # Fallback to empty conversation
+
+    conversation_text = "\n".join(f"{msg.get('role', 'UNKNOWN').upper()}: {msg.get('content', '')}" for msg in conversation)
+
     tasks = [speaker_agent(company, user_message, worker_results, conversation_text, companies) for company in companies]
     results = await asyncio.gather(*tasks)
-    return dict(zip(companies, results))
 
+    return dict(zip(companies, results))
 
 # ------------------------------------------------------------------------------
 # 6. Main Page Layout
@@ -365,7 +371,7 @@ with st.sidebar:
             responses = asyncio.run(run_speaker_agents(st.session_state["companies"], user_input, st.session_state["chat_history"], {company: [] for company in st.session_state["companies"]}))
 
         if not responses or not isinstance(responses, dict):
-            responses = {}  # Set default empty dictionary to avoid errors
+            responses = {}
 
         # Iterate over responses safely
         for company, text in responses.items():
