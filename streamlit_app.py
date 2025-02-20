@@ -417,7 +417,7 @@ with st.sidebar:
             st.chat_message("user").write(user_input)
 
         # Run async processing function using asyncio.run()
-        responses = asyncio.create_task(process_user_input(user_input, agent_number))
+        responses = asyncio.run_coroutine_threadsafe(process_user_input(user_input, agent_number), asyncio.get_event_loop()).result()
 
         for company, text in responses.items():
             st.session_state["chat_history"].append({"role": company, "content": text})
