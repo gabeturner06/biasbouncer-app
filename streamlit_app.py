@@ -113,6 +113,7 @@ async def speaker_agent(company: str, user_message: str, conversation_so_far: st
         worker_results=worker_results,
         all_perspectives=", ".join(all_perspectives)
     )
+    return response
 
 async def handle_tool_request(tool_data, chain, company, user_message):
     tool_results = ""
