@@ -222,8 +222,17 @@ async def run_worker_agents(companies: List[str], user_message: str) -> Dict[str
 
 async def run_speaker_agents(companies: List[str], user_message: str, conversation: List[Dict[str, str]], tool_results: Dict[str, List[str]]) -> Dict[str, str]:
     conversation_text = "\n".join(f"{msg['role'].upper()}: {msg['content']}" for msg in conversation)
+    
     async def speaker_wrapper(company):
-        return company, await speaker_agent(company, user_message, conversation_text, tool_results[company], companies)
+        # Ensure worker_results exists and is a string
+        worker_results = tool_results.get(company, [])
+        if not worker_results:  # If empty or None, set a default value
+            worker_results = "No additional data was gathered by the Worker Agent."
+        elif isinstance(worker_results, list):
+            worker_results = "\n".join(worker_results)  # Convert list to string
+        
+        return company, await speaker_agent(company, user_message, conversation_text, worker_results, companies)
+    
     results = await asyncio.gather(*(speaker_wrapper(company) for company in companies))
     return dict(results)
 
