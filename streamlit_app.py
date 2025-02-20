@@ -355,21 +355,15 @@ with st.sidebar:
                 
         # Agent Managers decide how to delegate work
         with st.spinner("Delegating Agents..."):
-            decisions = asyncio.run(
-                agent_manager(st.session_state["companies"], user_input)
-            )
+            decisions = asyncio.run(agent_manager(user_input))  # ✅ Use asyncio.run() here
 
         if decisions == "[Worker]":
-            work = asyncio.run(
-                run_worker_agents(st.session_state["companies"], user_input, st.session_state["chat_history"])
-            )
-            responses = asyncio.run(
-                run_speaker_agents(st.session_state["companies"], user_input, work, st.session_state["chat_history"])
-            )
+            tool_results = asyncio.run(run_worker_agents(st.session_state["companies"], user_input))  # ✅ Use asyncio.run() here
+            responses = asyncio.run(run_speaker_agents(st.session_state["companies"], user_input, st.session_state["chat_history"], tool_results))
         elif decisions == "[Speaker]":
-            responses = asyncio.run(
-                run_speaker_agents(st.session_state["companies"], user_input, st.session_state["chat_history"])
-            )
+            responses = asyncio.run(run_speaker_agents(st.session_state["companies"], user_input, st.session_state["chat_history"], {company: [] for company in st.session_state["companies"]}))
+
+
 
         # Append and display each agent's response
         for company, text in responses.items():
