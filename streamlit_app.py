@@ -230,11 +230,20 @@ async def run_speaker_agents(companies: List[str], user_message: str, conversati
             worker_results = "No additional data was gathered by the Worker Agent."
         elif isinstance(worker_results, list):
             worker_results = "\n".join(worker_results)  # Convert list to string
-        
+
+        # Debugging log to check inputs
+        print(f"DEBUG: Calling speaker_agent with: \n"
+              f"- company: {company}\n"
+              f"- user_message: {user_message}\n"
+              f"- conversation_text: {conversation_text}\n"
+              f"- worker_results: {worker_results}\n"
+              f"- all_perspectives: {companies}\n")
+
         return company, await speaker_agent(company, user_message, conversation_text, worker_results, companies)
     
     results = await asyncio.gather(*(speaker_wrapper(company) for company in companies))
     return dict(results)
+
 
 # ------------------------------------------------------------------------------
 # 6. Main Page Layout
