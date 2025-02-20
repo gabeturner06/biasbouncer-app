@@ -382,14 +382,7 @@ with st.sidebar:
             elif decisions == "[Speaker]":
                 responses = asyncio.run(run_speaker_agents(st.session_state["companies"], user_input, st.session_state["chat_history"], {company: [] for company in st.session_state["companies"]}))
             
-            # Ensure responses is a dictionary
-            responses = ensure_dict(responses)
-            
-            # Iterate over responses safely
             for company, text in responses.items():
-                if isinstance(text, tuple):  # Extract the response text if it's a tuple
-                    text = text[1]
-
                 st.session_state["chat_history"].append({"role": company, "content": text})
-                with st.chat_message("assistant"):
-                    st.write(text)
+                with messages_container:
+                    st.chat_message("assistant").write(f"**{company}**: {text}")
