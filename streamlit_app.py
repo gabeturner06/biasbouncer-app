@@ -390,36 +390,36 @@ with st.sidebar:
                 # but label it with the role name
                 st.chat_message("assistant").write(f"**{role}**: {content}")
 
-async def process_user_input(user_input, agent_number):
-    with st.spinner("Preparing Perspectives..."):
-        if not st.session_state["companies"]:
-            st.session_state["companies"] = await determine_companies(user_input, agent_number)
+    async def process_user_input(user_input, agent_number):
+        with st.spinner("Preparing Perspectives..."):
+            if not st.session_state["companies"]:
+                st.session_state["companies"] = await determine_companies(user_input, agent_number)
 
-    with st.spinner("Delegating Agents..."):
-        decisions = await agent_manager(user_input)
+        with st.spinner("Delegating Agents..."):
+            decisions = await agent_manager(user_input)
 
-    if decisions == "[Worker]":
-        tool_results = await run_worker_agents(st.session_state["companies"], user_input)
-        responses = await run_speaker_agents(st.session_state["companies"], user_input, st.session_state["chat_history"], tool_results)
-    elif decisions == "[Speaker]":
-        responses = await run_speaker_agents(st.session_state["companies"], user_input, st.session_state["chat_history"], {company: "" for company in st.session_state["companies"]})
+        if decisions == "[Worker]":
+            tool_results = await run_worker_agents(st.session_state["companies"], user_input)
+            responses = await run_speaker_agents(st.session_state["companies"], user_input, st.session_state["chat_history"], tool_results)
+        elif decisions == "[Speaker]":
+            responses = await run_speaker_agents(st.session_state["companies"], user_input, st.session_state["chat_history"], {company: "" for company in st.session_state["companies"]})
 
-    return responses
+        return responses
 
-# Chat input at the bottom
-user_input = st.chat_input("Work with the Agents")
-agent_number = st.slider("Number of Agents", 2, 6, 4)
+    # Chat input at the bottom
+    user_input = st.chat_input("Work with the Agents")
+    agent_number = st.slider("Number of Agents", 2, 6, 4)
 
-if user_input:
-    # Add user's message to the chat
-    st.session_state["chat_history"].append({"role": "user", "content": user_input})
-    with messages_container:
-        st.chat_message("user").write(user_input)
-
-    # Run async processing function using asyncio.run()
-    responses = asyncio.run(process_user_input(user_input, agent_number))
-
-    for company, text in responses.items():
-        st.session_state["chat_history"].append({"role": company, "content": text})
+    if user_input:
+        # Add user's message to the chat
+        st.session_state["chat_history"].append({"role": "user", "content": user_input})
         with messages_container:
-            st.chat_message("assistant").write(f"**{company}**: {text}")
+            st.chat_message("user").write(user_input)
+
+        # Run async processing function using asyncio.run()
+        responses = asyncio.run(process_user_input(user_input, agent_number))
+
+        for company, text in responses.items():
+            st.session_state["chat_history"].append({"role": company, "content": text})
+            with messages_container:
+                st.chat_message("assistant").write(f"**{company}**: {text}")
