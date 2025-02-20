@@ -78,9 +78,10 @@ async def agent_manager(message: str) -> str:
 
 async def speaker_agent(company: str, user_message: str, conversation_so_far: str, worker_results: str, all_perspectives: List[str]) -> str:
     llm_instance = ChatOpenAI(temperature=0.7, model="gpt-4")
+
     template = """
         You're in a casual group brainstorming chat trying to accurately and helpfully respond to a user query {user_message}. 
-        You're going to answer from the perspective of a {agent_name}, so you MUST role-play from this perspective to accurately
+        You're going to answer from the perspective of a {company}, so you MUST role-play from this perspective to accurately
         respond to the user's query.
 
         Here is the chat history: {conversation_so_far}
@@ -97,23 +98,29 @@ async def speaker_agent(company: str, user_message: str, conversation_so_far: st
         ALWAYS include as much direct information, figures, or quotes from the results of web research as you can. List your sources in bullet 
         points in the format: "title," author/organization, website URL (name the link 'Source' always).
         
-        If the user asked you to do research or write a file, a Worker Agent should already have compiled this information for you. Use this to
-        inform your answer. Worker Results (if any): {worker_results}
+        {worker_results}
     """
+
+    # Remove worker_results if empty
+    if not worker_results or worker_results == "No additional data was gathered by the Worker Agent.":
+        template = template.replace("{worker_results}", "")  # Remove worker_results placeholder entirely
+
     prompt = PromptTemplate(
-        input_variables=["company", "user_message", "conversation_so_far", "worker_results", "all_perspectives"],
+        input_variables=["company", "user_message", "conversation_so_far", "all_perspectives"],
         template=template
     )
+
     chain = LLMChain(llm=llm_instance, prompt=prompt)
+
     response = await asyncio.to_thread(
         chain.run,
         company=company,
         user_message=user_message,
         conversation_so_far=conversation_so_far,
-        worker_results=worker_results,
         all_perspectives=", ".join(all_perspectives)
     )
-    return response
+    
+    return response.strip() if response else "Error: No response generated."
 
 async def handle_tool_request(tool_data, chain, company, user_message):
     tool_results = ""
