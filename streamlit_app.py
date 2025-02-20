@@ -392,4 +392,4 @@ with st.sidebar:
 
             st.session_state["chat_history"].append({"role": company, "content": text})
             with messages_container:
-                st.chat_message("assistant").write(text)
+                st.chat_message("assistant").write(f"**{company}**: {text}")
