@@ -221,36 +221,11 @@ async def run_worker_agents(companies: List[str], user_message: str) -> Dict[str
     results = await asyncio.gather(*(worker_wrapper(company) for company in companies))
     return dict(results)  # Returns {"VC Investor": [...], "Tech Founder": [...], "Startup Lawyer": [...]} 
 
-async def run_speaker_agents(companies: List[str], user_message: str, conversation: List[Dict[str, str]], tool_results: Dict[str, List[str]]) -> Dict[str, str]:
+async def run_speaker_agents(companies: List[str],  user_message: str, worker_results: str, conversation: List[Dict[str, str]]) -> Dict[str, str]:
     conversation_text = "\n".join(f"{msg['role'].upper()}: {msg['content']}" for msg in conversation)
-
-    async def speaker_wrapper(company):
-        try:
-            worker_results = tool_results.get(company, [])
-            if not worker_results:
-                worker_results = "No additional data was gathered by the Worker Agent."
-            elif isinstance(worker_results, list):
-                worker_results = "\n".join(worker_results)
-
-            print(f"DEBUG: Calling speaker_agent with: \n"
-                  f"- company: {company}\n"
-                  f"- user_message: {user_message}\n"
-                  f"- conversation_text: {conversation_text}\n"
-                  f"- worker_results: {worker_results}\n"
-                  f"- all_perspectives: {companies}\n")
-
-            return company, await speaker_agent(company, user_message, conversation_text, worker_results, companies)
-
-        except Exception as e:
-            print(f"ERROR: speaker_agent failed for {company}: {e}")
-            return company, "Error: Unable to generate response."
-
-    try:
-        results = await asyncio.gather(*(speaker_wrapper(company) for company in companies))
-        return dict(results) if results else {}
-    except Exception as e:
-        print(f"ERROR: run_speaker_agents failed: {e}")
-        return {}
+    tasks = [speaker_agent(company, user_message, worker_results, conversation_text, companies) for company in companies]
+    results = await asyncio.gather(*tasks)
+    return dict(zip(companies, results))
 
 
 # ------------------------------------------------------------------------------
