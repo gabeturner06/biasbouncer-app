@@ -60,74 +60,76 @@ async def determine_companies(message: str, agent_number: int) -> List[str]:
     companies = [item.strip() for item in response.split(",") if item.strip()]
     return companies[:agent_number]
 
-async def handle_tool_request(tool_data, chain, company, user_message, conversation_so_far, all_perspectives):
-    updated_conversation = conversation_so_far
+async def agent_manager(message: str) -> str:
+    llm_instance = ChatOpenAI(temperature=0, model="gpt-4")
+    template = f"""
+    Identify, based on the user query, what type of agent needs to work first: a Worker agent or a Speaker Agent.
+    If the user query asks the agent to use tools like reading/writing files, researching, or scraping web pages,
+    your response should be a Worker. If the user query doesn't ask for any of these things, your response should
+    be a Speaker. Output ONLY either [Worker] or [Speaker] as your final response.
+
+    User query: {message}
+    """
+    prompt = PromptTemplate(input_variables=["message", "agent_number"], template=template)
+    chain = LLMChain(llm=llm_instance, prompt=prompt)
+    response = await asyncio.to_thread(chain.run, message=message, agent_number=agent_number)
+    return response
+
+async def handle_tool_request(tool_data, chain, company, user_message):
+    tool_results = ""
     if tool_data["tool"] == "read" and read_tool:
         with st.spinner("Reading Files"):
             filename = tool_data["filename"]
             read_data = await read_tool(filename)
-            updated_conversation += f"\n\n[File '{filename}' content:]\n{read_data}"
+            tool_results += f"\n\n[File '{filename}' content:]\n{read_data}"
     elif tool_data["tool"] == "write" and write_tool:
         with st.spinner("Writing to File"):
             filename = tool_data["filename"]
             content = tool_data["content"]
-            write_result = await write_tool(filename, content)
-            return f"{write_result}"
+            tool_results += await write_tool(filename, content)
     elif tool_data["tool"] == "research" and research_tool:
         with st.spinner("Searching the Web"):
             query = tool_data["query"]
             search_results = await research_tool(query)
-            updated_conversation += f"\n\n[Research on '{query}':]\n{search_results}"
+            tool_results += f"\n\n[Research on '{query}':]\n{search_results}"
     elif tool_data["tool"] == "scrape_webpage" and scrape_webpage_tool:
         with st.spinner("Reading Web Pages"):
             url = tool_data["url"]
             scrape_results = await scrape_webpage_tool(url)
-            updated_conversation += f"\n\n[Webpage '{url}' info:]\n{scrape_results.get('content', 'No content.')}"
+            tool_results += f"\n\n[Webpage '{url}' info:]\n{scrape_results.get('content', 'No content.')}"
     else:
         return None
     informed_response = await asyncio.to_thread(
         chain.run,
         company=company,
         user_message=user_message,
-        conversation_so_far=updated_conversation,
-        all_perspectives=", ".join(all_perspectives)
+        tool_results=tool_results
     )
     return informed_response
 
-async def generate_response(company: str, user_message: str, conversation_so_far: str, all_perspectives: List[str]) -> str:
+async def speaker_agent(company: str, user_message: str, conversation_so_far: str, worker_results: str, all_perspectives: List[str]) -> str:
     llm_instance = ChatOpenAI(temperature=0.7, model="gpt-4")
     template = """
-    You're in a casual group brainstorming chat trying to accurately and helpfully respond to a user query {user_message}. 
-    You're going to answer from the perspective of a {company}, so you MUST role-play from this perspective to accurately
-    respond to the user's query.
+        You're in a casual group brainstorming chat trying to accurately and helpfully respond to a user query {user_message}. 
+        You're going to answer from the perspective of a {agent_name}, so you MUST role-play from this perspective to accurately
+        respond to the user's query.
 
-    Here is the chat history: {conversation_so_far}
+        Here is the chat history: {conversation_so_far}
 
-    Here are all of the perspectives in this conversation with the user: {all_perspectives}. Remember, you're only representing 
-    {company}; other agents will represent the others.
+        Here are all of the perspectives in this conversation with the user: {all_perspectives}. Remember, you're only representing 
+        {company}; other agents will represent the others.
 
-    Please reply briefly and informally, as if you're a professional brainstorming with friends in a group 
-    chat. It is meant to be a quick, collaborative brainstorm session with the user, where you discuss and evaluate ideas 
-    created by the user, and briefly explain your reasoning. In other words, your response shouldn't be much longer than the
-    question asked by the user. Take note of the other perspectives present, so you can try to differentiate your ideas from theirs. 
-    If you're instructed to do nothing, then just reply sure thing and do nothing.
+        Please reply briefly and informally, as if you're a professional brainstorming with friends in a group 
+        chat. It is meant to be a quick, collaborative brainstorm session with the user, where you discuss and evaluate ideas 
+        created by the user, and briefly explain your reasoning. In other words, your response shouldn't be much longer than the
+        question asked by the user. Take note of the other perspectives present, so you can try to differentiate your ideas from theirs. 
+        If you're instructed to do nothing, then just reply sure thing and do nothing.
 
-    If you need to read, write, or research something online, include a JSON block in your response in the following format:
-
-    
-    ```json
-    {{
-        "tool": "read", "write", "research" or "scrape_webpage",
-        "filename": "filename" (only for read/write, do NOT include any other filepaths or folders),
-        "content": "(Your agent name): content-to-write" (only for 'write'),
-        "query": "search query here" (only for 'research'),
-        "url": "full url of the website you want to scrape" (only for 'scrape_webpage')
-    }}
-
-    If no tool is needed, do not include the JSON block. You can only create .txt files, and ONLY create them when told to.
-    You can ONLY use one tool per response, so do NOT include a JSON block in your second response if you have one. ALWAYS include
-    as much direct information, figures, or quotes from your web research as you can. List your sources in bullet points in the format:
-    "title," author/organization, website URL (name the link 'Source' always). ALWAYS ask the user before scraping any webpages.
+        ALWAYS include as much direct information, figures, or quotes from the results of web research as you can. List your sources in bullet 
+        points in the format: "title," author/organization, website URL (name the link 'Source' always).
+        
+        If the user asked you to do research or write a file, a Worker Agent should already have compiled this information for you. Use this to
+        inform your answer. Worker Results (if any): {worker_results}
     """
     prompt = PromptTemplate(
         input_variables=["company", "user_message", "conversation_so_far", "all_perspectives"],
@@ -139,25 +141,81 @@ async def generate_response(company: str, user_message: str, conversation_so_far
         company=company,
         user_message=user_message,
         conversation_so_far=conversation_so_far,
+        worker_results=worker_results,
         all_perspectives=", ".join(all_perspectives)
     )
-    json_match = re.search(r"```json\n(.*?)\n```", response, re.DOTALL)
-    if json_match:
-        try:
-            tool_data = json.loads(json_match.group(1))
-            tool_response = await handle_tool_request(tool_data, chain, company, user_message, conversation_so_far, all_perspectives)
-            if tool_response:
-                return tool_response
-        except (json.JSONDecodeError, KeyError):
-            return f"Error parsing tool invocation:\n{response}"
+
+async def worker_agent(company: str, user_message: str, tool_results: List[str]) -> str:
+    llm_instance = ChatOpenAI(temperature=0, model="gpt-4")
+    template = """
+        You're a Worker agent for an '{company}', responsible for handling tool-based operations in response to the user's query: {user_message}.
+        Generate a JSON block specifying what tool to use and with what content. Based on the previous tool output, determine what tool needs to be
+        used next, if any.
+        
+        If you need to read, write, or research something online, include a JSON block in your response in the following format:
+    
+        
+        ```json
+        {{
+            "tool": "read", "write", "research" or "scrape_webpage",
+            "filename": "filename" (only for read/write, do NOT include any other filepaths or folders),
+            "content": "(Your agent name): content-to-write" (only for 'write'),
+            "query": "search query here" (only for 'research'),
+            "url": "full url of the website you want to scrape" (only for 'scrape_webpage')
+        }}
+    
+        If no tool is needed, do not include the JSON block. You can only create .txt files.
+        
+        Previous tool outputs (if any):
+        {tool_results}
+    """
+    prompt = PromptTemplate(
+        input_variables=["company", "user_message", "tool_output"],
+        template=template
+    )
+    chain = LLMChain(llm=llm_instance, prompt=prompt)
+    response = await asyncio.to_thread(
+        chain.run,
+        company=company,
+        user_message=user_message,
+        tool_results=", ".join(tool_results),
+    )
+    while True:
+            json_match = re.search(r"```json\n(.*?)\n```", response, re.DOTALL)
+            if not json_match:
+                break  # No more tools needed
+
+            try:
+                tool_data_list = json.loads(json_match.group(1))
+                if not isinstance(tool_data_list, list):
+                    tool_data_list = [tool_data_list]  # Convert to list if single dict
+
+                for tool_data in tool_data_list:
+                    tool_response = await handle_tool_request(tool_data, chain, company, user_message, tool_results)
+                    if tool_response:
+                        updated_conversation += f"\n\n{tool_response}"
+
+                # Rerun the agent with updated information
+                response = await asyncio.to_thread(
+                    chain.run,
+                    company=company,
+                    user_message=user_message,
+                    tool_results=", ".join(tool_results),
+                )
+
+            except (json.JSONDecodeError, KeyError):
+                return f"Error parsing tool invocation:\n{response}"
+
     return response.strip()
 
-async def run_agents(companies: List[str], user_message: str, conversation: List[Dict[str, str]]) -> Dict[str, str]:
-    max_length = 5000  # Character limit
+async def run_worker_agents(companies: List[str], user_message: str, tool_results: List[str]) -> Dict[str, str]:
+    tasks = [worker_agent(company, user_message, tool_results, companies) for company in companies]
+    results = await asyncio.gather(*tasks)
+    return dict(zip(companies, results))
+
+async def run_speaker_agents(companies: List[str], user_message: str, conversation: List[Dict[str, str]]) -> Dict[str, str]:
     conversation_text = "\n".join(f"{msg['role'].upper()}: {msg['content']}" for msg in conversation)
-    if len(conversation_text) > max_length:
-        conversation_text = conversation_text[-max_length:]
-    tasks = [generate_response(company, user_message, conversation_text, companies) for company in companies]
+    tasks = [speaker_agent(company, user_message, conversation_text, work, companies) for company in companies]
     results = await asyncio.gather(*tasks)
     return dict(zip(companies, results))
 
@@ -286,12 +344,23 @@ with st.sidebar:
             if not st.session_state["companies"]:
                 # Pass agent_number along with the user_input
                 st.session_state["companies"] = asyncio.run(determine_companies(user_input, agent_number))
+                
+        # Agent Managers decide how to delegate work
+        with st.spinner("Delegating Agents..."):
+            decisions = asyncio.run(
+                agent_manager(st.session_state["companies"], user_input)
+            )
 
-
-        # Run all agents concurrently
-        with st.spinner("Preparing Responses..."):
+        if decisions == "[Worker]":
+            work = asyncio.run(
+                run_worker_agents(st.session_state["companies"], user_input, st.session_state["chat_history"])
+            )
             responses = asyncio.run(
-                run_agents(st.session_state["companies"], user_input, st.session_state["chat_history"])
+                run_speaker_agents(st.session_state["companies"], user_input, work, st.session_state["chat_history"])
+            )
+        elif decisions == "[Speaker]":
+            responses = asyncio.run(
+                run_speaker_agents(st.session_state["companies"], user_input, st.session_state["chat_history"])
             )
 
         # Append and display each agent's response
