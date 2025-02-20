@@ -244,7 +244,7 @@ async def run_speaker_agents(companies: List[str], user_message: str, conversati
         return company, await speaker_agent(company, user_message, conversation_text, worker_results, companies)
 
     results = await asyncio.gather(*(speaker_wrapper(company) for company in companies))
-    return dict(zip(results))
+    return results
 
 # ------------------------------------------------------------------------------
 # 6. Main Page Layout
