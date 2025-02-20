@@ -101,7 +101,7 @@ async def speaker_agent(company: str, user_message: str, conversation_so_far: st
         inform your answer. Worker Results (if any): {worker_results}
     """
     prompt = PromptTemplate(
-        input_variables=["company", "user_message", "conversation_so_far", "all_perspectives"],
+        input_variables=["company", "user_message", "conversation_so_far", "worker_results", "all_perspectives"],
         template=template
     )
     chain = LLMChain(llm=llm_instance, prompt=prompt)
