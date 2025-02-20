@@ -373,23 +373,23 @@ with st.sidebar:
                 st.session_state["companies"] = asyncio.run(determine_companies(user_input, agent_number))
                 
         # Agent Managers decide how to delegate work
-        with st.spinner("Delegating Agents..."):
-            decisions = asyncio.run(agent_manager(user_input))  # ✅ Use asyncio.run() here
+            with st.spinner("Delegating Agents..."):
+                decisions = asyncio.run(agent_manager(user_input))
 
-        if decisions == "[Worker]":
-            tool_results = asyncio.run(run_worker_agents(st.session_state["companies"], user_input))  # ✅ Use asyncio.run() here
-            responses = asyncio.run(run_speaker_agents(st.session_state["companies"], user_input, st.session_state["chat_history"], tool_results))
-        elif decisions == "[Speaker]":
-            responses = asyncio.run(run_speaker_agents(st.session_state["companies"], user_input, st.session_state["chat_history"], {company: [] for company in st.session_state["companies"]}))
+            if decisions == "[Worker]":
+                tool_results = asyncio.run(run_worker_agents(st.session_state["companies"], user_input))
+                responses = asyncio.run(run_speaker_agents(st.session_state["companies"], user_input, st.session_state["chat_history"], tool_results))
+            elif decisions == "[Speaker]":
+                responses = asyncio.run(run_speaker_agents(st.session_state["companies"], user_input, st.session_state["chat_history"], {company: [] for company in st.session_state["companies"]}))
+            
+            # Ensure responses is a dictionary
+            responses = ensure_dict(responses)
+            
+            # Iterate over responses safely
+            for company, text in responses.items():
+                if isinstance(text, tuple):  # Extract the response text if it's a tuple
+                    text = text[1]
 
-        if not responses or not isinstance(responses, dict):
-            responses = {}
-
-        # Iterate over responses safely
-        for company, text in responses.items():
-            if isinstance(text, tuple):  # Ensure we only extract the response
-                text = text[1]
-
-            st.session_state["chat_history"].append({"role": company, "content": text})
-            with messages_container:
-                st.chat_message("assistant").write(f"**{company}**: {text}")
+                st.session_state["chat_history"].append({"role": company, "content": text})
+                with st.chat_message("assistant"):
+                    st.write(text)
