@@ -372,9 +372,10 @@ with st.sidebar:
         elif decisions == "[Speaker]":
             responses = asyncio.run(run_speaker_agents(st.session_state["companies"], user_input, st.session_state["chat_history"], {company: [] for company in st.session_state["companies"]}))
 
+        if not responses or not isinstance(responses, dict):
+            responses = {}  # Set default empty dictionary to avoid errors
 
-
-        # Append and display each agent's response
+        # Iterate over responses safely
         for company, text in responses.items():
             st.session_state["chat_history"].append({"role": company, "content": text})
             with messages_container:
