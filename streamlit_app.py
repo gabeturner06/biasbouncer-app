@@ -387,6 +387,9 @@ with st.sidebar:
 
         # Iterate over responses safely
         for company, text in responses.items():
+            if isinstance(text, tuple):  # Ensure we only extract the response
+                text = text[1]
+
             st.session_state["chat_history"].append({"role": company, "content": text})
             with messages_container:
-                st.chat_message("assistant").write(f"**{company}**: {text}")
+                st.chat_message("assistant").write(text)
