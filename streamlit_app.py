@@ -217,7 +217,7 @@ with cols[3]:
 
 st.divider()
 
-st.subheader("Agent Files")
+st.subheader("Agent Files & Uploaded Docs")
 
 col1, col2 = st.columns([0.4, 0.6])
 
