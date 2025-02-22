@@ -40,20 +40,30 @@ async def write_tool(filename: str, content: str):
         elif file_ext == "pdf":
             doc = fitz.open()
             page = doc.new_page()
-            page.insert_text((50, 50), content)  # Insert text at position (50,50)
+            
+            text = content.replace("\n", " ")  # Ensure line breaks are handled properly
+            text_rect = fitz.Rect(50, 50, 550, 800)  # Define text area on the page
+            
+            page.insert_textbox(text_rect, text, fontsize=12, fontname="helv", align=0)
             doc.save(temp_file_path)
+
 
         elif file_ext == "docx":
             doc = Document()
-            doc.add_paragraph(content)
+            for paragraph in content.split("\n"):  # Ensure paragraphs are separated properly
+                doc.add_paragraph(paragraph)
             doc.save(temp_file_path)
+
 
         elif file_ext == "xlsx":
             wb = Workbook()
             ws = wb.active
             for i, line in enumerate(content.split("\n"), start=1):
-                ws[f"A{i}"] = line  # Write each line to a new row
+                cells = line.split("\t") if "\t" in line else line.split(",")  # Handle CSV or tab-separated data
+                for j, cell in enumerate(cells, start=1):
+                    ws.cell(row=i, column=j, value=cell)
             wb.save(temp_file_path)
+
 
         else:
             return f"Error: Unsupported file type '{file_ext}'. Supported formats: TXT, PDF, DOCX, XLSX."
