@@ -296,6 +296,8 @@ with st.sidebar:
             # Trigger UI update so files appear in the dropdown
             st.session_state["file_updated"] = True  
             st.rerun()  # Refresh UI
+    if st.button("Upload Docs", use_container_width=True, type="secondary"):
+        upload_files()
 
     agent_number = st.slider("Number of Agents", 2, 6, 4)
     if user_input:
