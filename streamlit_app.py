@@ -272,7 +272,7 @@ with st.sidebar:
                 # but label it with the role name
                 st.chat_message("assistant").write(f"**{role}**: {content}")
 
-    col1, col2 = st.columns([0.9,0.1])
+    col1, col2 = st.columns([0.85,0.15])
     with col1: 
         user_input = st.chat_input("Work with the Agents")
     with col2:
