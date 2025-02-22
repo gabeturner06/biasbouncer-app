@@ -3,7 +3,6 @@ import aiofiles
 import os
 import json
 import streamlit as st
-import fitz  # PyMuPDF
 
 # Ensure session state has a temp directory
 def ensure_temp_dir():
@@ -32,51 +31,20 @@ async def write_tool(filename: str, content: str):
     except Exception as e:
         return f"Error writing to temporary file: {str(e)}"
 
-
+# Function to read a file
 async def read_tool(filename: str):
     try:
-        # First, check if file content is stored in session_state
-        if filename == st.session_state.get("uploaded_filename") and "uploaded_file_content" in st.session_state:
-            file_content = st.session_state["uploaded_file_content"]
-            
-            # Determine file extension
-            file_ext = filename.lower().split('.')[-1]
-
-            if file_ext == "txt":
-                return file_content.decode("utf-8")  # Decode binary content into string
-            elif file_ext == "pdf":
-                return await read_pdf_from_bytes(file_content)  # Extract text from PDF bytes
-            else:
-                return f"Error: Unsupported file type '{file_ext}'. Only TXT and PDF are supported."
-
-        # Fallback to reading from temporary storage
         temp_dir = ensure_temp_dir()
         temp_file_path = os.path.join(temp_dir, filename)
 
-        if not os.path.exists(temp_file_path):
-            return f"Error: Temporary file '{filename}' does not exist."
-
-        file_ext = filename.lower().split('.')[-1]
-
-        if file_ext == "txt":
-            async with aiofiles.open(temp_file_path, mode='r', encoding='utf-8') as file:
-                return await file.read()
-        elif file_ext == "pdf":
-            return await read_pdf_from_bytes(temp_file_path)
+        if os.path.exists(temp_file_path):
+            async with aiofiles.open(temp_file_path, mode='r') as file:
+                content = await file.read()
+            return content
         else:
-            return f"Error: Unsupported file type '{file_ext}'. Only TXT and PDF are supported."
-
+            return f"Error: Temporary file '{filename}' does not exist."
     except Exception as e:
-        return f"Error reading from file: {str(e)}"
-
-async def read_pdf_from_bytes(file_bytes: bytes):
-    """Extracts text from a PDF file stored as bytes."""
-    try:
-        doc = fitz.open(stream=file_bytes, filetype="pdf")  # Load from bytes
-        text = "\n".join([page.get_text("text") for page in doc])
-        return text if text else "Sorry, no text found in the PDF."
-    except Exception as e:
-        return f"Error extracting text from PDF: {str(e)}"
+        return f"Error reading from temporary file: {str(e)}"
 
 async def process_tool_invocation_temp(tool_json: str) -> str:
     try:
