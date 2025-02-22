@@ -318,10 +318,11 @@ with st.sidebar:
                 run_agents(
                     st.session_state["companies"], 
                     user_input, 
-                    st.session_state["chat_history"], 
-                    uploaded_filename=st.session_state["uploaded_filename"]  # Include filename
+                    st.session_state["uploaded_filename"],  # Fix: Moved this here
+                    st.session_state["chat_history"]       # Fix: Moved this to last position
                 )
             )
+
 
         # Append and display each agent's response
         for company, text in responses.items():
