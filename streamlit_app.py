@@ -2,9 +2,8 @@ import streamlit as st
 
 import asyncio
 import re
-import os
 import json
-from typing import List, Dict, Optional
+from typing import List, Dict
 
 from langchain_openai import ChatOpenAI
 from langchain.prompts import PromptTemplate
@@ -39,12 +38,6 @@ if "companies" not in st.session_state:
     # Dynamically generated list of 'perspectives'
     st.session_state["companies"] = []
 
-if "uploaded_filename" not in st.session_state:
-    st.session_state["uploaded_filename"] = None
-
-if "uploaded_file_content" not in st.session_state:
-    st.session_state["uploaded_file_content"] = None
-
 llm = ChatOpenAI(temperature=0)  # Base LLM (not used directly below but you can adapt)
     
 # ------------------------------------------------------------------------------
@@ -67,63 +60,41 @@ async def determine_companies(message: str, agent_number: int) -> List[str]:
     companies = [item.strip() for item in response.split(",") if item.strip()]
     return companies[:agent_number]
 
-async def handle_tool_request(tool_data, chain, company, user_message, conversation_so_far, all_perspectives, uploaded_filename):
+async def handle_tool_request(tool_data, chain, company, user_message, conversation_so_far, all_perspectives):
     updated_conversation = conversation_so_far
-
-    if tool_data["tool"] == "read":
+    if tool_data["tool"] == "read" and read_tool:
         with st.spinner("Reading Files"):
-            filename = tool_data.get("filename") or uploaded_filename  # Ensure fallback
-
-            if not filename or filename == "No file uploaded":
-                return "Error: No valid file specified."
-
-            if filename == st.session_state.get("uploaded_filename") and "uploaded_file_content" in st.session_state:
-                file_content = st.session_state["uploaded_file_content"]
-                read_data = file_content.decode("utf-8") if isinstance(file_content, bytes) else file_content
-            else:
-                read_data = await read_tool(filename)  # Fallback to tool reading
-
+            filename = tool_data["filename"]
+            read_data = await read_tool(filename)
             updated_conversation += f"\n\n[File '{filename}' content:]\n{read_data}"
-
-
     elif tool_data["tool"] == "write" and write_tool:
         with st.spinner("Writing to File"):
             filename = tool_data["filename"]
             content = tool_data["content"]
             write_result = await write_tool(filename, content)
             return f"{write_result}"
-
     elif tool_data["tool"] == "research" and research_tool:
         with st.spinner("Searching the Web"):
             query = tool_data["query"]
             search_results = await research_tool(query)
             updated_conversation += f"\n\n[Research on '{query}':]\n{search_results}"
-
     elif tool_data["tool"] == "scrape_webpage" and scrape_webpage_tool:
         with st.spinner("Reading Web Pages"):
             url = tool_data["url"]
             scrape_results = await scrape_webpage_tool(url)
             updated_conversation += f"\n\n[Webpage '{url}' info:]\n{scrape_results.get('content', 'No content.')}"
-    
     else:
         return None
-
-    # Run the AI chain with the updated conversation
     informed_response = await asyncio.to_thread(
         chain.run,
         company=company,
         user_message=user_message,
-        uploaded_filename=uploaded_filename,
         conversation_so_far=updated_conversation,
         all_perspectives=", ".join(all_perspectives)
     )
-
     return informed_response
 
-async def generate_response(company: str, user_message: str, uploaded_filename: Optional[str], conversation_so_far: str, all_perspectives: List[str]):
-    # If no file is uploaded, replace {uploaded_filename} in prompt
-    uploaded_filename = uploaded_filename or "No file uploaded"
-
+async def generate_response(company: str, user_message: str, conversation_so_far: str, all_perspectives: List[str]) -> str:
     llm_instance = ChatOpenAI(temperature=0.7, model="gpt-4")
     template = """
     You're in a casual group brainstorming chat trying to accurately and helpfully respond to a user query {user_message}. 
@@ -153,15 +124,13 @@ async def generate_response(company: str, user_message: str, uploaded_filename: 
         "url": "full url of the website you want to scrape" (only for 'scrape_webpage')
     }}
 
-    If the user asks you to read an uploaded file, you should use the "read" tool with the "filename": {uploaded_filename}
-
     If no tool is needed, do not include the JSON block. You can only create .txt files, and ONLY create them when told to.
     You can ONLY use one tool per response, so do NOT include a JSON block in your second response if you have one. ALWAYS include
     as much direct information, figures, or quotes from your web research as you can. List your sources in bullet points in the format:
     "title," author/organization, website URL (name the link 'Source' always). ALWAYS ask the user before scraping any webpages.
     """
     prompt = PromptTemplate(
-        input_variables=["company", "user_message", "uploaded_filename", "conversation_so_far", "all_perspectives"],
+        input_variables=["company", "user_message", "conversation_so_far", "all_perspectives"],
         template=template
     )
     chain = LLMChain(llm=llm_instance, prompt=prompt)
@@ -169,7 +138,6 @@ async def generate_response(company: str, user_message: str, uploaded_filename: 
         chain.run,
         company=company,
         user_message=user_message,
-        uploaded_filename=uploaded_filename,
         conversation_so_far=conversation_so_far,
         all_perspectives=", ".join(all_perspectives)
     )
@@ -177,28 +145,20 @@ async def generate_response(company: str, user_message: str, uploaded_filename: 
     if json_match:
         try:
             tool_data = json.loads(json_match.group(1))
-            tool_response = await handle_tool_request(tool_data, chain, company, user_message, conversation_so_far, all_perspectives, uploaded_filename)
+            tool_response = await handle_tool_request(tool_data, chain, company, user_message, conversation_so_far, all_perspectives)
             if tool_response:
                 return tool_response
         except (json.JSONDecodeError, KeyError):
             return f"Error parsing tool invocation:\n{response}"
     return response.strip()
 
-async def run_agents(companies: List[str], user_message: str, uploaded_filename: Optional[str], conversation: List[Dict[str, str]]):
+async def run_agents(companies: List[str], user_message: str, conversation: List[Dict[str, str]]) -> Dict[str, str]:
     max_length = 5000  # Character limit
     conversation_text = "\n".join(f"{msg['role'].upper()}: {msg['content']}" for msg in conversation)
-
     if len(conversation_text) > max_length:
         conversation_text = conversation_text[-max_length:]
-
-    uploaded_filename = uploaded_filename or "No file uploaded"
-
-    tasks = [
-        generate_response(company, user_message, uploaded_filename, conversation_text, companies)
-        for company in companies
-    ]
-
-    results = await asyncio.gather(*tasks, return_exceptions=True)  # Prevent one failure from breaking all
+    tasks = [generate_response(company, user_message, conversation_text, companies) for company in companies]
+    results = await asyncio.gather(*tasks)
     return dict(zip(companies, results))
 
 # ------------------------------------------------------------------------------
@@ -312,47 +272,30 @@ with st.sidebar:
                 # but label it with the role name
                 st.chat_message("assistant").write(f"**{role}**: {content}")
 
-    col1, col2 = st.columns([0.8, 0.2])
-    with col1:
-        user_input = st.chat_input("Work with the Agents")
-
-    with col2:
-        @st.dialog("Upload Files")
-        def upload_files():
-            uploaded_file = st.file_uploader("Choose a file", accept_multiple_files=False)
-            if uploaded_file:
-                st.session_state["uploaded_filename"] = uploaded_file.name  # Just filename
-                st.session_state["uploaded_file_content"] = uploaded_file.getvalue()  # Store actual content
-                st.write("File saved:", uploaded_file.name)
-        if st.button("Upload", type="secondary"):
-            upload_files()
-
+    # Chat input at the bottom
+    user_input = st.chat_input("Work with the Agents")
     agent_number = st.slider("Number of Agents", 2, 6, 4)
-
     if user_input:
         # Add user's message to the chat
         st.session_state["chat_history"].append({"role": "user", "content": user_input})
-        st.chat_message("user").write(user_input)
+        with messages_container:
+            st.chat_message("user").write(user_input)
 
-        # Determine perspectives if not already done
+        # If we haven't determined perspectives yet, do so now
         with st.spinner("Preparing Perspectives..."):
             if not st.session_state["companies"]:
+                # Pass agent_number along with the user_input
                 st.session_state["companies"] = asyncio.run(determine_companies(user_input, agent_number))
 
-        # Run all agents concurrently, passing uploaded filename
-        with st.spinner("Preparing Responses..."):
-            uploaded_filename = st.session_state.get("uploaded_filename", None)
 
+        # Run all agents concurrently
+        with st.spinner("Preparing Responses..."):
             responses = asyncio.run(
-                run_agents(
-                    st.session_state["companies"], 
-                    user_input, 
-                    uploaded_filename,  # Ensure it's not None
-                    st.session_state["chat_history"]
-                )
+                run_agents(st.session_state["companies"], user_input, st.session_state["chat_history"])
             )
 
         # Append and display each agent's response
         for company, text in responses.items():
             st.session_state["chat_history"].append({"role": company, "content": text})
-            st.chat_message("assistant").write(f"**{company}**: {text}")
+            with messages_container:
+                st.chat_message("assistant").write(f"**{company}**: {text}")
