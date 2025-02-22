@@ -274,6 +274,19 @@ with st.sidebar:
 
     # Chat input at the bottom
     user_input = st.chat_input("Work with the Agents")
+
+    @st.dialog("How BiasBouncer Works")
+    def upload_files():
+        uploaded_files = st.file_uploader(
+            "Choose a CSV file", accept_multiple_files=True
+        )
+        for uploaded_file in uploaded_files:
+            bytes_data = uploaded_file.read()
+            st.write("filename:", uploaded_file.name)
+            st.write(bytes_data)
+    if st.button("Upload Files", type="secondary"):
+        upload_files()
+
     agent_number = st.slider("Number of Agents", 2, 6, 4)
     if user_input:
         # Add user's message to the chat
