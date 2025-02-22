@@ -2,6 +2,7 @@ import streamlit as st
 
 import asyncio
 import re
+import os
 import json
 from typing import List, Dict
 
@@ -9,7 +10,7 @@ from langchain_openai import ChatOpenAI
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
 
-from biasbouncer.tools.file_tools import read_tool, write_tool, list_files
+from biasbouncer.tools.file_tools import read_tool, write_tool, list_files, ensure_temp_dir
 from biasbouncer.tools.research_tools import research_tool, scrape_webpage_tool
 
 # ------------------------------------------------------------------------------
@@ -278,14 +279,23 @@ with st.sidebar:
     @st.dialog("Upload Files")
     def upload_files():
         uploaded_files = st.file_uploader(
-            "Choose a CSV file", accept_multiple_files=True
+            "Upload a File to BiasBouncer", accept_multiple_files=True
         )
-        for uploaded_file in uploaded_files:
-            bytes_data = uploaded_file.read()
-            st.write("filename:", uploaded_file.name)
-            st.write(bytes_data)
-    if st.button("Upload Files", type="secondary"):
-        upload_files()
+        
+        if uploaded_files:
+            temp_dir = ensure_temp_dir()  # Ensure temp directory exists
+            for uploaded_file in uploaded_files:
+                file_path = os.path.join(temp_dir, uploaded_file.name)
+
+                # Save file contents to temp directory
+                with open(file_path, "wb") as f:
+                    f.write(uploaded_file.read())
+
+                st.write(f"Uploaded: {uploaded_file.name}")
+
+            # Trigger UI update so files appear in the dropdown
+            st.session_state["file_updated"] = True  
+            st.rerun()  # Refresh UI
 
     agent_number = st.slider("Number of Agents", 2, 6, 4)
     if user_input:
