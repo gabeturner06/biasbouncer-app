@@ -2,6 +2,7 @@ import streamlit as st
 
 import asyncio
 import re
+import os
 import json
 from typing import List, Dict
 
@@ -65,29 +66,42 @@ async def determine_companies(message: str, agent_number: int) -> List[str]:
 
 async def handle_tool_request(tool_data, chain, company, user_message, conversation_so_far, all_perspectives):
     updated_conversation = conversation_so_far
+
     if tool_data["tool"] == "read" and read_tool:
         with st.spinner("Reading Files"):
             filename = tool_data["filename"]
-            read_data = await read_tool(filename)
+
+            # Fetch content from session_state instead of just filename
+            if filename == st.session_state.get("uploaded_filename") and "uploaded_file_content" in st.session_state:
+                read_data = st.session_state["uploaded_file_content"].decode("utf-8")  # Decode if binary
+            else:
+                read_data = await read_tool(filename)  # Fallback to tool reading
+
             updated_conversation += f"\n\n[File '{filename}' content:]\n{read_data}"
+
     elif tool_data["tool"] == "write" and write_tool:
         with st.spinner("Writing to File"):
             filename = tool_data["filename"]
             content = tool_data["content"]
             write_result = await write_tool(filename, content)
             return f"{write_result}"
+
     elif tool_data["tool"] == "research" and research_tool:
         with st.spinner("Searching the Web"):
             query = tool_data["query"]
             search_results = await research_tool(query)
             updated_conversation += f"\n\n[Research on '{query}':]\n{search_results}"
+
     elif tool_data["tool"] == "scrape_webpage" and scrape_webpage_tool:
         with st.spinner("Reading Web Pages"):
             url = tool_data["url"]
             scrape_results = await scrape_webpage_tool(url)
             updated_conversation += f"\n\n[Webpage '{url}' info:]\n{scrape_results.get('content', 'No content.')}"
+    
     else:
         return None
+
+    # Run the AI chain with the updated conversation
     informed_response = await asyncio.to_thread(
         chain.run,
         company=company,
@@ -95,6 +109,7 @@ async def handle_tool_request(tool_data, chain, company, user_message, conversat
         conversation_so_far=updated_conversation,
         all_perspectives=", ".join(all_perspectives)
     )
+
     return informed_response
 
 async def generate_response(company: str, user_message: str, uploaded_filename: str, conversation_so_far: str, all_perspectives: List[str]) -> str:
@@ -292,11 +307,15 @@ with st.sidebar:
     with col2:
         @st.dialog("Upload Files")
         def upload_files():
-            uploaded_files = st.file_uploader("Choose a file", accept_multiple_files=False)
-            if uploaded_files:
-                st.write("filename:", uploaded_files.name)
-                st.session_state["uploaded_filename"] = uploaded_files.name
-                return uploaded_files.name
+            uploaded_file = st.file_uploader("Choose a file", accept_multiple_files=False)
+            if uploaded_file:
+                file_path = os.path.join("/tmp", uploaded_file.name)  # Temporary directory
+                with open(file_path, "wb") as f:
+                    f.write(uploaded_file.getvalue())
+
+                st.session_state["uploaded_filename"] = file_path  # Store full path
+                st.write("File saved:", file_path)
+
         
         if st.button("Upload", type="secondary"):
             upload_files()
