@@ -313,7 +313,6 @@ with st.sidebar:
 
     with col2:
         @st.dialog("Upload Files")
-        @st.dialog("Upload Files")
         def upload_files():
             uploaded_file = st.file_uploader("Choose a file", accept_multiple_files=False)
             if uploaded_file:
