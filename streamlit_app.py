@@ -151,7 +151,7 @@ async def generate_response(company: str, user_message: str, uploaded_filename: 
     if json_match:
         try:
             tool_data = json.loads(json_match.group(1))
-            tool_response = await handle_tool_request(tool_data, chain, company, user_message, uploaded_filename, conversation_so_far, all_perspectives)
+            tool_response = await handle_tool_request(tool_data, chain, company, user_message, conversation_so_far, all_perspectives)
             if tool_response:
                 return tool_response
         except (json.JSONDecodeError, KeyError):
