@@ -231,23 +231,56 @@ with col1:
         selected_file = st.selectbox("Select a file:", files)
 
         # Define the modal for viewing file content
+        # Define the modal for viewing and downloading file content
         @st.dialog(f"{selected_file}")
         def view_file():
             with st.spinner("Reading file..."):
-                file_content = asyncio.run(read_tool(selected_file))
-            
-            st.text_area("File Content", file_content, height=400)
+                temp_dir = ensure_temp_dir()
+                temp_file_path = os.path.join(temp_dir, selected_file)
 
-            # Add a download button
-            st.download_button(
-                label="Download File",
-                data=file_content,  # File content as data
-                file_name=selected_file,  # Keep the original filename
-                mime="text/plain",  # Set appropriate MIME type
-            )
+                if not os.path.exists(temp_file_path):
+                    st.error("Error: File does not exist.")
+                    return
+
+                # Determine file type
+                file_ext = selected_file.lower().split('.')[-1]
+
+                # Read file correctly based on its type
+                if file_ext in ["txt"]:
+                    with open(temp_file_path, "r", encoding="utf-8") as f:
+                        file_content = f.read()
+                    mime_type = "text/plain"
+
+                    # Show text content in the UI
+                    st.text_area("File Content", file_content, height=400)
+
+                elif file_ext in ["pdf", "docx", "xlsx"]:
+                    with open(temp_file_path, "rb") as f:
+                        file_content = f.read()
+
+                    # Set the correct MIME type
+                    mime_types = {
+                        "pdf": "application/pdf",
+                        "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                        "xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    }
+                    mime_type = mime_types.get(file_ext, "application/octet-stream")  # Default to binary
+
+                else:
+                    st.error(f"Unsupported file type: {file_ext}")
+                    return
+
+                # Add a download button with the correct MIME type
+                st.download_button(
+                    label="Download File",
+                    data=file_content,  
+                    file_name=selected_file,
+                    mime=mime_type,  
+                )
 
         if st.button("View File", use_container_width=True, type="secondary"):
             view_file()
+
     else:
         st.write("No files created.")
 
