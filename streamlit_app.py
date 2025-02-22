@@ -277,13 +277,13 @@ with st.sidebar:
         user_input = st.chat_input("Work with the Agents")
     with col2:
         @st.dialog("Upload Files")
-        def explain():
+        def upload_files():
             st.divider()
             st.write("Every idea begins with a Brainstorming session. Click the sidebar arrow at the top left, then ask a question or pitch your idea in the Brainstorm Chat. BiasBouncer explores different perspectives to address your idea’s complications, with each agent responding casually and outlining their reasoning. You can also create files in the chat to store your ideas. Once your plan is ready, orchestrate your work!")
             st.write("Agents perform tasks like research, coding, or reviewing. These tasks populate in the 'To Do' column and gradually move to 'Done' for review. Chat with agents for feedback, and when all tasks are complete, your finished project will be ready to download!")
             st.caption("As of 1/30/2025, Brainstorm Chat (with file-creation and web research) is operational. Team WorkBench functionality is coming soon.")
-        if st.button("How it Works", type="secondary"):
-            explain()
+        if st.button("Upload Files", type="secondary"):
+            upload_files()
 
     agent_number = st.slider("Number of Agents", 2, 6, 4)
     if user_input:
