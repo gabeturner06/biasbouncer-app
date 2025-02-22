@@ -164,7 +164,7 @@ async def run_agents(companies: List[str], user_message: str, conversation: List
     if len(conversation_text) > max_length:
         conversation_text = conversation_text[-max_length:]
     tasks = [generate_response(company, user_message, conversation_text, companies) for company in companies]
-    results = await asyncio.gather(*tasks)
+    results = await asyncio.gather(*tasks) 
     return dict(zip(companies, results))
 
 # ------------------------------------------------------------------------------
