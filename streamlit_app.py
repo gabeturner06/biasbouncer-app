@@ -247,41 +247,42 @@ with col1:
                     st.error("Error: File does not exist.")
                     return
 
-                # Determine file type
                 file_ext = selected_file.lower().split('.')[-1]
 
-                # Read file correctly based on its type
-                if file_ext in ["txt"]:
+                if file_ext in ["txt", "md", "py"]:
                     with open(temp_file_path, "r", encoding="utf-8") as f:
                         file_content = f.read()
-                    mime_type = "text/plain"
+                    mime_types = {
+                        "txt": "text/plain",
+                        "md": "text/markdown",
+                        "py": "text/x-python",
+                    }
+                    mime_type = mime_types[file_ext]
 
-                    # Show text content in the UI
                     st.text_area("File Content", file_content, height=400)
 
                 elif file_ext in ["pdf", "docx", "xlsx"]:
                     with open(temp_file_path, "rb") as f:
                         file_content = f.read()
-
-                    # Set the correct MIME type
                     mime_types = {
                         "pdf": "application/pdf",
                         "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                         "xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     }
-                    mime_type = mime_types.get(file_ext, "application/octet-stream")  # Default to binary
+                    mime_type = mime_types[file_ext]
 
                 else:
                     st.error(f"Unsupported file type: {file_ext}")
                     return
 
-                # Add a download button with the correct MIME type
+                # Download button with correct MIME type
                 st.download_button(
                     label="Download File",
-                    data=file_content,  
+                    data=file_content,
                     file_name=selected_file,
-                    mime=mime_type,  
+                    mime=mime_type,
                 )
+
 
         if st.button("View File", use_container_width=True, type="secondary"):
             view_file()

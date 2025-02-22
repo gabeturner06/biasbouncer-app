@@ -32,10 +32,9 @@ async def write_tool(filename: str, content: str):
         # Determine file extension
         file_ext = filename.lower().split('.')[-1]
 
-        if file_ext == "txt":
-            mode = 'a' if os.path.exists(temp_file_path) else 'w'
-            async with aiofiles.open(temp_file_path, mode=mode, encoding='utf-8') as file:
-                await file.write(content + '\n')
+        if file_ext in ["txt", "md", "py"]:
+            async with aiofiles.open(temp_file_path, mode='w', encoding='utf-8') as file:
+                await file.write(content)
 
         elif file_ext == "pdf":
             doc = fitz.open()
@@ -85,7 +84,7 @@ async def read_tool(filename: str):
         # Determine file extension
         file_ext = filename.lower().split('.')[-1]
 
-        if file_ext == "txt":
+        if file_ext in ["txt", "md", "py"]:
             async with aiofiles.open(temp_file_path, mode='r', encoding='utf-8') as file:
                 content = await file.read()
 
