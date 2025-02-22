@@ -279,25 +279,36 @@ with st.sidebar:
     @st.dialog("Upload Files")
     def upload_files():
         uploaded_files = st.file_uploader(
-            "Upload a File to BiasBouncer. Remember to give the agents the name of the file to read in your question.", accept_multiple_files=True
+            "Upload a File to BiasBouncer. Remember to give the agents the name of the file to read in your question.",
+            accept_multiple_files=True
         )
-        
+
         if uploaded_files:
             temp_dir = ensure_temp_dir()  # Ensure temp directory exists
             for uploaded_file in uploaded_files:
                 file_path = os.path.join(temp_dir, uploaded_file.name)
 
-                # Save file contents to temp directory
-                with open(file_path, "wb") as f:
-                    f.write(uploaded_file.read())
+                # Avoid overwriting existing files by appending a counter if needed
+                base_name, ext = os.path.splitext(uploaded_file.name)
+                counter = 1
+                while os.path.exists(file_path):
+                    file_path = os.path.join(temp_dir, f"{base_name}_{counter}{ext}")
+                    counter += 1
 
-                st.write(f"Uploaded: {uploaded_file.name}")
+                # Save file in chunks (handles large files better)
+                with open(file_path, "wb") as f:
+                    for chunk in uploaded_file.chunks() if hasattr(uploaded_file, "chunks") else [uploaded_file.read()]:
+                        f.write(chunk)
+
+                st.write(f"✅ Uploaded: {os.path.basename(file_path)}")
 
             # Trigger UI update so files appear in the dropdown
             st.session_state["file_updated"] = True  
             st.rerun()  # Refresh UI
+
     if st.button("Upload Docs", type="secondary"):
         upload_files()
+
 
     agent_number = st.slider("Number of Agents", 2, 6, 4)
     if user_input:

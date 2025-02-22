@@ -8,3 +8,6 @@ aiofiles
 trafilatura
 openai
 pymupdf
+openpyxl
+python-docx
+pandas
