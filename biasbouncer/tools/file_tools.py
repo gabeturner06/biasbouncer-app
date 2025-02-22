@@ -62,7 +62,7 @@ async def read_tool(filename: str):
             async with aiofiles.open(temp_file_path, mode='r', encoding='utf-8') as file:
                 return await file.read()
         elif file_ext == "pdf":
-            return await read_pdf(temp_file_path)
+            return await read_pdf_from_bytes(temp_file_path)
         else:
             return f"Error: Unsupported file type '{file_ext}'. Only TXT and PDF are supported."
 

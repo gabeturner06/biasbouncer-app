@@ -4,7 +4,7 @@ import asyncio
 import re
 import os
 import json
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 from langchain_openai import ChatOpenAI
 from langchain.prompts import PromptTemplate
@@ -40,7 +40,10 @@ if "companies" not in st.session_state:
     st.session_state["companies"] = []
 
 if "uploaded_filename" not in st.session_state:
-    st.session_state["uploaded_filename"] = "No files uploaded."
+    st.session_state["uploaded_filename"] = None
+
+if "uploaded_file_content" not in st.session_state:
+    st.session_state["uploaded_file_content"] = None
 
 llm = ChatOpenAI(temperature=0)  # Base LLM (not used directly below but you can adapt)
     
@@ -112,7 +115,11 @@ async def handle_tool_request(tool_data, chain, company, user_message, conversat
 
     return informed_response
 
-async def generate_response(company: str, user_message: str, uploaded_filename: str, conversation_so_far: str, all_perspectives: List[str]) -> str:
+async def generate_response(company: str, user_message: str, uploaded_filename: Optional[str], conversation_so_far: str, all_perspectives: List[str]):
+    # If no file is uploaded, replace {uploaded_filename} in prompt
+    if not uploaded_filename:
+        uploaded_filename = "No file uploaded"
+
     llm_instance = ChatOpenAI(temperature=0.7, model="gpt-4")
     template = """
     You're in a casual group brainstorming chat trying to accurately and helpfully respond to a user query {user_message}. 
@@ -306,17 +313,13 @@ with st.sidebar:
 
     with col2:
         @st.dialog("Upload Files")
+        @st.dialog("Upload Files")
         def upload_files():
             uploaded_file = st.file_uploader("Choose a file", accept_multiple_files=False)
             if uploaded_file:
-                file_path = os.path.join("/tmp", uploaded_file.name)  # Temporary directory
-                with open(file_path, "wb") as f:
-                    f.write(uploaded_file.getvalue())
-
-                st.session_state["uploaded_filename"] = file_path  # Store full path
-                st.write("File saved:", file_path)
-
-        
+                st.session_state["uploaded_filename"] = uploaded_file.name  # Just filename
+                st.session_state["uploaded_file_content"] = uploaded_file.getvalue()  # Store actual content
+                st.write("File saved:", uploaded_file.name)
         if st.button("Upload", type="secondary"):
             upload_files()
 
@@ -334,12 +337,14 @@ with st.sidebar:
 
         # Run all agents concurrently, passing uploaded filename
         with st.spinner("Preparing Responses..."):
+            uploaded_filename = st.session_state.get("uploaded_filename", None)
+
             responses = asyncio.run(
                 run_agents(
                     st.session_state["companies"], 
                     user_input, 
-                    st.session_state["uploaded_filename"],  # Fix: Moved this here
-                    st.session_state["chat_history"]       # Fix: Moved this to last position
+                    uploaded_filename,  # Ensure it's not None
+                    st.session_state["chat_history"]
                 )
             )
 
