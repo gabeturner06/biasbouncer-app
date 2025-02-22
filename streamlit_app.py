@@ -295,7 +295,8 @@ with st.sidebar:
             uploaded_files = st.file_uploader("Choose a file", accept_multiple_files=False)
             if uploaded_files:
                 st.write("filename:", uploaded_files.name)
-                st.session_state["uploaded_filename"] = uploaded_files.name  # Store in session state
+                st.session_state["uploaded_filename"] = uploaded_files.name
+                return uploaded_files.name
         
         if st.button("Upload", type="secondary"):
             upload_files()
@@ -322,7 +323,6 @@ with st.sidebar:
                     st.session_state["chat_history"]       # Fix: Moved this to last position
                 )
             )
-
 
         # Append and display each agent's response
         for company, text in responses.items():
