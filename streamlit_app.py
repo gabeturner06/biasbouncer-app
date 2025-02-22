@@ -67,20 +67,24 @@ async def determine_companies(message: str, agent_number: int) -> List[str]:
     companies = [item.strip() for item in response.split(",") if item.strip()]
     return companies[:agent_number]
 
-async def handle_tool_request(tool_data, chain, company, user_message, conversation_so_far, all_perspectives):
+async def handle_tool_request(tool_data, chain, company, user_message, conversation_so_far, all_perspectives, uploaded_filename):
     updated_conversation = conversation_so_far
 
-    if tool_data["tool"] == "read" and read_tool:
+    if tool_data["tool"] == "read":
         with st.spinner("Reading Files"):
-            filename = tool_data["filename"]
+            filename = tool_data.get("filename") or uploaded_filename  # Ensure fallback
 
-            # Fetch content from session_state instead of just filename
+            if not filename or filename == "No file uploaded":
+                return "Error: No valid file specified."
+
             if filename == st.session_state.get("uploaded_filename") and "uploaded_file_content" in st.session_state:
-                read_data = st.session_state["uploaded_file_content"].decode("utf-8")  # Decode if binary
+                file_content = st.session_state["uploaded_file_content"]
+                read_data = file_content.decode("utf-8") if isinstance(file_content, bytes) else file_content
             else:
                 read_data = await read_tool(filename)  # Fallback to tool reading
 
             updated_conversation += f"\n\n[File '{filename}' content:]\n{read_data}"
+
 
     elif tool_data["tool"] == "write" and write_tool:
         with st.spinner("Writing to File"):
@@ -109,6 +113,7 @@ async def handle_tool_request(tool_data, chain, company, user_message, conversat
         chain.run,
         company=company,
         user_message=user_message,
+        uploaded_filename=uploaded_filename,
         conversation_so_far=updated_conversation,
         all_perspectives=", ".join(all_perspectives)
     )
@@ -117,8 +122,7 @@ async def handle_tool_request(tool_data, chain, company, user_message, conversat
 
 async def generate_response(company: str, user_message: str, uploaded_filename: Optional[str], conversation_so_far: str, all_perspectives: List[str]):
     # If no file is uploaded, replace {uploaded_filename} in prompt
-    if not uploaded_filename:
-        uploaded_filename = "No file uploaded"
+    uploaded_filename = uploaded_filename or "No file uploaded"
 
     llm_instance = ChatOpenAI(temperature=0.7, model="gpt-4")
     template = """
@@ -173,27 +177,28 @@ async def generate_response(company: str, user_message: str, uploaded_filename: 
     if json_match:
         try:
             tool_data = json.loads(json_match.group(1))
-            tool_response = await handle_tool_request(tool_data, chain, company, user_message, conversation_so_far, all_perspectives)
+            tool_response = await handle_tool_request(tool_data, chain, company, user_message, conversation_so_far, all_perspectives, uploaded_filename)
             if tool_response:
                 return tool_response
         except (json.JSONDecodeError, KeyError):
             return f"Error parsing tool invocation:\n{response}"
     return response.strip()
 
-async def run_agents(companies: List[str], user_message: str, uploaded_filename: str, conversation: List[Dict[str, str]]):
+async def run_agents(companies: List[str], user_message: str, uploaded_filename: Optional[str], conversation: List[Dict[str, str]]):
     max_length = 5000  # Character limit
     conversation_text = "\n".join(f"{msg['role'].upper()}: {msg['content']}" for msg in conversation)
 
     if len(conversation_text) > max_length:
         conversation_text = conversation_text[-max_length:]
 
-    # Fix argument order
+    uploaded_filename = uploaded_filename or "No file uploaded"
+
     tasks = [
         generate_response(company, user_message, uploaded_filename, conversation_text, companies)
         for company in companies
     ]
 
-    results = await asyncio.gather(*tasks)
+    results = await asyncio.gather(*tasks, return_exceptions=True)  # Prevent one failure from breaking all
     return dict(zip(companies, results))
 
 # ------------------------------------------------------------------------------
