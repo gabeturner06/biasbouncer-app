@@ -275,7 +275,7 @@ with st.sidebar:
     # Chat input at the bottom
     user_input = st.chat_input("Work with the Agents")
 
-    @st.dialog("How BiasBouncer Works")
+    @st.dialog("Upload Files")
     def upload_files():
         uploaded_files = st.file_uploader(
             "Choose a CSV file", accept_multiple_files=True
