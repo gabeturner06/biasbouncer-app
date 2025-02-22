@@ -7,3 +7,4 @@ chromadb
 aiofiles
 trafilatura
 openai
+pymupdf
