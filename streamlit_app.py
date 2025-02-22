@@ -125,7 +125,7 @@ async def generate_response(company: str, user_message: str, conversation_so_far
         "url": "full url of the website you want to scrape" (only for 'scrape_webpage')
     }}
 
-    If no tool is needed, do not include the JSON block. You can only create .txt files, and ONLY create them when told to.
+    If no tool is needed, do not include the JSON block. You can create .txt, .pdf, .docx, and .xlsx files, but ONLY create them when told to.
     You can ONLY use one tool per response, so do NOT include a JSON block in your second response if you have one. ALWAYS include
     as much direct information, figures, or quotes from your web research as you can. List your sources in bullet points in the format:
     "title," author/organization, website URL (name the link 'Source' always). ALWAYS ask the user before scraping any webpages.
