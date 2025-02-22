@@ -7,7 +7,9 @@ import json
 import csv
 import pandas as pd
 import docx
+from docx import Document
 import mimetypes
+from openpyxl import Workbook
 
 # Ensure session state has a temp directory
 def ensure_temp_dir():
@@ -21,22 +23,46 @@ def list_files():
     return os.listdir(temp_dir)
 
 # Function to write a file and trigger UI update
+
 async def write_tool(filename: str, content: str):
     try:
         temp_dir = ensure_temp_dir()  # Ensure temp directory is initialized
         temp_file_path = os.path.join(temp_dir, filename)
-        
-        mode = 'a' if os.path.exists(temp_file_path) else 'w'
-        async with aiofiles.open(temp_file_path, mode=mode) as file:
-            await file.write(content + '\n')
+
+        # Determine file extension
+        file_ext = filename.lower().split('.')[-1]
+
+        if file_ext == "txt":
+            mode = 'a' if os.path.exists(temp_file_path) else 'w'
+            async with aiofiles.open(temp_file_path, mode=mode, encoding='utf-8') as file:
+                await file.write(content + '\n')
+
+        elif file_ext == "pdf":
+            doc = fitz.open()
+            page = doc.new_page()
+            page.insert_text((50, 50), content)  # Insert text at position (50,50)
+            doc.save(temp_file_path)
+
+        elif file_ext == "docx":
+            doc = Document()
+            doc.add_paragraph(content)
+            doc.save(temp_file_path)
+
+        elif file_ext == "xlsx":
+            wb = Workbook()
+            ws = wb.active
+            for i, line in enumerate(content.split("\n"), start=1):
+                ws[f"A{i}"] = line  # Write each line to a new row
+            wb.save(temp_file_path)
+
+        else:
+            return f"Error: Unsupported file type '{file_ext}'. Supported formats: TXT, PDF, DOCX, XLSX."
 
         st.session_state["file_updated"] = True  # Trigger UI refresh
+        return f"✅ Successfully wrote to '{temp_file_path}'."
 
-        return f"Successfully wrote to '{temp_file_path}'."
     except Exception as e:
-        return f"Error writing to temporary file: {str(e)}"
-
-# Function to read a file
+        return f"❌ Error writing to file: {str(e)}"
 
 async def read_tool(filename: str):
     try:
