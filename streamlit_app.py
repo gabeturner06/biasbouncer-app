@@ -235,6 +235,11 @@ with col1:
         @st.dialog(f"{selected_file}")
         def view_file():
             with st.spinner("Reading file..."):
+
+                file_content = asyncio.run(read_tool(selected_file))
+            
+                st.text_area("File Content", file_content, height=400)
+
                 temp_dir = ensure_temp_dir()
                 temp_file_path = os.path.join(temp_dir, selected_file)
 
