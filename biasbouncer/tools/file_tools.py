@@ -32,7 +32,15 @@ async def write_tool(filename: str, content: str):
         # Determine file extension
         file_ext = filename.lower().split('.')[-1]
 
-        if file_ext in ["txt", "md", "py"]:
+        if file_ext == "txt":
+            async with aiofiles.open(temp_file_path, mode='w', encoding='utf-8') as file:
+                await file.write(content)
+        
+        elif file_ext == "md":
+            async with aiofiles.open(temp_file_path, mode='w', encoding='utf-8') as file:
+                await file.write(content)
+
+        elif file_ext == "py":
             async with aiofiles.open(temp_file_path, mode='w', encoding='utf-8') as file:
                 await file.write(content)
 
@@ -84,9 +92,17 @@ async def read_tool(filename: str):
         # Determine file extension
         file_ext = filename.lower().split('.')[-1]
 
-        if file_ext in ["txt", "md", "py"]:
+        if file_ext == "txt":
             async with aiofiles.open(temp_file_path, mode='r', encoding='utf-8') as file:
-                content = await file.read()
+                await file.read(content)
+        
+        elif file_ext == "md":
+            async with aiofiles.open(temp_file_path, mode='r', encoding='utf-8') as file:
+                await file.read(content)
+
+        elif file_ext == "py":
+            async with aiofiles.open(temp_file_path, mode='r', encoding='utf-8') as file:
+                await file.read(content)
 
         elif file_ext == "pdf":
             content = await read_pdf(temp_file_path)
