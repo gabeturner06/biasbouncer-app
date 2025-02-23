@@ -182,6 +182,26 @@ def explain():
 if st.button("How it Works", type="secondary"):
     explain()
 
+@st.dialog("Donate to BiasBouncer")
+def explain():
+    st.divider()
+    st.write("Your support goes into developing BiasBouncer and to keep it free for our first users. Thank you!")
+    st.markdown(
+    """
+    <script async src="https://js.stripe.com/v3/buy-button.js"></script>
+
+    <div class="button-container">
+        <stripe-buy-button
+            buy-button-id="buy_btn_1Qu1brDAgslVp57akJIPB2g4"
+            publishable-key="pk_live_51QJwTYDAgslVp57aPvb39Xd1m6vLvlVoZzuumTHcsNatPtZlb39u1iCUlhbXhZuzuIfcTXcrKPteT8Fa6hLLFdWA006qIEaRov">
+        </stripe-buy-button>
+    </div>
+    """,
+    unsafe_allow_html=True
+    )
+if st.button("Donate", type="secondary"):
+    explain()
+
 @st.dialog("Update 2/22/2025")
 def explain():
     st.divider()
