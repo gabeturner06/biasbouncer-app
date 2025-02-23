@@ -190,7 +190,7 @@ def explain():
     """
     <div style="display: flex; justify-content: center; margin-top: 20px;">
         <a href="https://donate.stripe.com/bIY2bbeYC1I2208002?locale=en" target="_blank">
-            <button style="background-color:#635BFF; color:white; padding:10px 20px; font-size:16px; border:none; border-radius:5px; cursor:pointer;">
+            <button style="background-color:#FF4B4B; color:white; padding:10px 20px; font-size:16px; border:none; border-radius:5px; cursor:pointer;">
                 Donate with Stripe
             </button>
         </a>
