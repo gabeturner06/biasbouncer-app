@@ -189,13 +189,10 @@ def explain():
     st.markdown(
     """
     <script async src="https://js.stripe.com/v3/buy-button.js"></script>
-
-    <div class="button-container">
-        <stripe-buy-button
-            buy-button-id="buy_btn_1Qu1brDAgslVp57akJIPB2g4"
-            publishable-key="pk_live_51QJwTYDAgslVp57aPvb39Xd1m6vLvlVoZzuumTHcsNatPtZlb39u1iCUlhbXhZuzuIfcTXcrKPteT8Fa6hLLFdWA006qIEaRov">
-        </stripe-buy-button>
-    </div>
+    <stripe-buy-button
+        buy-button-id="buy_btn_1Qu1brDAgslVp57akJIPB2g4"
+        publishable-key="pk_live_51QJwTYDAgslVp57aPvb39Xd1m6vLvlVoZzuumTHcsNatPtZlb39u1iCUlhbXhZuzuIfcTXcrKPteT8Fa6hLLFdWA006qIEaRov">
+    </stripe-buy-button>
     """,
     unsafe_allow_html=True
     )
