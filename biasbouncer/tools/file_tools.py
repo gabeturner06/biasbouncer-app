@@ -71,6 +71,12 @@ async def write_tool(filename: str, content: str):
                     ws.cell(row=i, column=j, value=cell)
             wb.save(temp_file_path)
 
+        elif file_ext == "csv":
+            with open(temp_file_path, mode="w", newline="", encoding="utf-8") as file:
+                writer = csv.writer(file)
+                for line in content.split("\n"):
+                    writer.writerow(line.split(",")) 
+
 
         else:
             return f"Error: Unsupported file type '{file_ext}'. Supported formats: TXT, PDF, DOCX, XLSX."
