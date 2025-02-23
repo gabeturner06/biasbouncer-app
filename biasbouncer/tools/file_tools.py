@@ -33,15 +33,33 @@ async def write_tool(filename: str, content: str):
         file_ext = filename.lower().split('.')[-1]
 
         if file_ext == "txt":
-            async with aiofiles.open(temp_file_path, mode='w', encoding='utf-8') as file:
+            mode = 'a' if os.path.exists(temp_file_path) else 'w'
+            async with aiofiles.open(temp_file_path, mode=mode, encoding='utf-8') as file:
                 await file.write(content)
         
         elif file_ext == "md":
-            async with aiofiles.open(temp_file_path, mode='w', encoding='utf-8') as file:
+            mode = 'a' if os.path.exists(temp_file_path) else 'w'
+            async with aiofiles.open(temp_file_path, mode=mode, encoding='utf-8') as file:
                 await file.write(content)
 
         elif file_ext == "py":
-            async with aiofiles.open(temp_file_path, mode='w', encoding='utf-8') as file:
+            mode = 'a' if os.path.exists(temp_file_path) else 'w'
+            async with aiofiles.open(temp_file_path, mode=mode, encoding='utf-8') as file:
+                await file.write(content)
+
+        elif file_ext == "html":
+            mode = 'w'  # Always overwrite structured files
+            async with aiofiles.open(temp_file_path, mode=mode, encoding='utf-8') as file:
+                await file.write(content)
+
+        elif file_ext == "css":
+            mode = 'w'  # Always overwrite structured files
+            async with aiofiles.open(temp_file_path, mode=mode, encoding='utf-8') as file:
+                await file.write(content)
+        
+        elif file_ext == "json":
+            mode = 'w'  # Always overwrite structured files
+            async with aiofiles.open(temp_file_path, mode=mode, encoding='utf-8') as file:
                 await file.write(content)
 
         elif file_ext == "pdf":
