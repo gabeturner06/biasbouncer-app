@@ -186,7 +186,16 @@ if st.button("How it Works", type="secondary"):
 def explain():
     st.divider()
     st.write("Your support goes into developing BiasBouncer and keeping it free to try for our very first users like you. Thank you!")
-    st.button("Donate Now", link="https://donate.stripe.com/bIY2bbeYC1I2208002?locale=en&__embed_source=buy_btn_1Qu1brDAgslVp57akJIPB2g4", type="primary", use_container_width=True)
+    st.markdown(
+    """
+    <a href="https://donate.stripe.com/bIY2bbeYC1I2208002?locale=en" target="_blank">
+        <button style="background-color:#635BFF; color:white; padding:10px 20px; font-size:16px; border:none; border-radius:5px; cursor:pointer;">
+            Donate with Stripe
+        </button>
+    </a>
+    """,
+    unsafe_allow_html=True
+    )
 if st.button("Donate", type="secondary"):
     explain()
 
