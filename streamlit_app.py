@@ -188,11 +188,14 @@ def explain():
     st.write("Your support goes into developing BiasBouncer and keeping it free to try for our very first users like you. Thank you!")
     st.markdown(
     """
-    <a href="https://donate.stripe.com/bIY2bbeYC1I2208002?locale=en" target="_blank">
-        <button style="background-color:#635BFF; color:white; padding:10px 20px; font-size:16px; border:none; border-radius:5px; cursor:pointer;">
-            Donate with Stripe
-        </button>
-    </a>
+    <div style="display: flex; justify-content: center; margin-top: 20px;">
+        <a href="https://donate.stripe.com/bIY2bbeYC1I2208002?locale=en" target="_blank">
+            <button style="background-color:#635BFF; color:white; padding:10px 20px; font-size:16px; border:none; border-radius:5px; cursor:pointer;">
+                Donate with Stripe
+            </button>
+        </a>
+    </div>
+    <br>
     """,
     unsafe_allow_html=True
     )
