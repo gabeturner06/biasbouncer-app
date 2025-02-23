@@ -202,14 +202,6 @@ def explain():
 if st.button("Donate", type="secondary"):
     explain()
 
-"""
-@st.dialog("Update mm/dd/yyyy")
-def explain():
-    st.divider()
-    st.write("Due to high usage rates, BiasBouncer currently has an insufficient OpenAI funding quota and will be down temporarily. Thank you for your understanding.")
-if st.button("Update mm/dd/yyyy", type="secondary"):
-    explain()
-"""
 
 def create_task_dialog(task_name: str):
     @st.dialog(task_name)
