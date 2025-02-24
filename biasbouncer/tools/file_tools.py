@@ -146,6 +146,15 @@ async def read_tool(filename: str):
         elif file_ext == "docx":
             content = await read_docx(temp_file_path)
 
+        elif file_ext == "png":
+            return await analyze_image(temp_file_path)
+        
+        elif file_ext == "jpg":
+            return await analyze_image(temp_file_path)        
+
+        elif file_ext == "jpeg":
+            return await analyze_image(temp_file_path)
+
         else:
             mime_type, _ = mimetypes.guess_type(temp_file_path)
             return f"Error: Unsupported file type '{file_ext}' (MIME type: {mime_type})."
