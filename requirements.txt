@@ -12,4 +12,3 @@ openpyxl
 python-docx
 pandas
 pillow 
-easyocr
