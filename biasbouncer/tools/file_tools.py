@@ -10,6 +10,10 @@ import docx
 from docx import Document
 import mimetypes
 from openpyxl import Workbook
+import pytesseract  # OCR
+from PIL import Image
+from transformers import BlipProcessor, BlipForConditionalGeneration
+import torch
 
 # Ensure session state has a temp directory
 def ensure_temp_dir():
@@ -83,11 +87,19 @@ async def write_tool(filename: str, content: str):
         elif file_ext == "xlsx":
             wb = Workbook()
             ws = wb.active
-            for i, line in enumerate(content.split("\n"), start=1):
-                cells = line.split("\t") if "\t" in line else line.split(",")  # Handle CSV or tab-separated data
-                for j, cell in enumerate(cells, start=1):
-                    ws.cell(row=i, column=j, value=cell)
+
+            for line in content.split("\n"):
+                line = line.strip()
+                if not line:
+                    continue  # Skip empty lines
+
+                # Handle CSV or tab-separated values safely
+                cells = list(csv.reader([line], delimiter="\t" if "\t" in line else ","))[0]
+                
+                ws.append(cells)  # Append row dynamically
+
             wb.save(temp_file_path)
+
 
         elif file_ext == "csv":
             with open(temp_file_path, mode="w", newline="", encoding="utf-8") as file:
@@ -104,6 +116,10 @@ async def write_tool(filename: str, content: str):
 
     except Exception as e:
         return f"❌ Error writing to file: {str(e)}"
+    
+device = "cuda" if torch.cuda.is_available() else "cpu"
+processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-base")
+model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-base").to(device)
 
 async def read_tool(filename: str):
     try:
@@ -142,7 +158,16 @@ async def read_tool(filename: str):
 
         elif file_ext == "docx":
             content = await read_docx(temp_file_path)
+        
+        elif file_ext == "png":
+            return await analyze_image(temp_file_path)
+        
+        elif file_ext == "jpg":
+            return await analyze_image(temp_file_path)        
 
+        elif file_ext == "jpeg":
+            return await analyze_image(temp_file_path)
+        
         else:
             mime_type, _ = mimetypes.guess_type(temp_file_path)
             return f"Error: Unsupported file type '{file_ext}' (MIME type: {mime_type})."
@@ -151,6 +176,25 @@ async def read_tool(filename: str):
 
     except Exception as e:
         return f"Error reading from file: {str(e)}"
+    
+async def analyze_image(image_path: str):
+    try:
+        image = Image.open(image_path).convert("RGB")
+
+        # OCR (Extract text from image)
+        extracted_text = pytesseract.image_to_string(image).strip()
+        extracted_text = extracted_text if extracted_text else "No readable text detected."
+
+        # AI Captioning (Scene description)
+        inputs = processor(image, return_tensors="pt").to(device)
+        with torch.no_grad():
+            generated_ids = model.generate(**inputs)
+        caption = processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
+
+        return f"**Extracted Text:**\n{extracted_text}\n\n **AI Caption:** {caption}"
+
+    except Exception as e:
+        return f"Error analyzing image: {str(e)}"
 
 # PDF Reader
 async def read_pdf(pdf_path: str):

@@ -11,3 +11,9 @@ pymupdf
 openpyxl
 python-docx
 pandas
+pytesseract 
+pillow 
+transformers 
+torch 
+torchvision 
+torchaudio
