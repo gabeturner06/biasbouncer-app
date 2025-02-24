@@ -10,7 +10,7 @@ import docx
 from docx import Document
 import mimetypes
 from openpyxl import Workbook
-import pytesseract  # OCR
+import easyocr
 from PIL import Image
 from transformers import BlipProcessor, BlipForConditionalGeneration
 import torch
@@ -117,6 +117,9 @@ async def write_tool(filename: str, content: str):
     except Exception as e:
         return f"❌ Error writing to file: {str(e)}"
     
+    
+reader = easyocr.Reader(["en"])  # Supports English OCR
+    
 device = "cuda" if torch.cuda.is_available() else "cpu"
 processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-base")
 model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-base").to(device)
@@ -181,9 +184,9 @@ async def analyze_image(image_path: str):
     try:
         image = Image.open(image_path).convert("RGB")
 
-        # OCR (Extract text from image)
-        extracted_text = pytesseract.image_to_string(image).strip()
-        extracted_text = extracted_text if extracted_text else "No readable text detected."
+        # OCR (Extract text from image using EasyOCR)
+        result = reader.readtext(image_path, detail=0)  # Extract text only
+        extracted_text = "\n".join(result) if result else "No readable text detected."
 
         # AI Captioning (Scene description)
         inputs = processor(image, return_tensors="pt").to(device)
@@ -191,7 +194,11 @@ async def analyze_image(image_path: str):
             generated_ids = model.generate(**inputs)
         caption = processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
 
-        return f"**Extracted Text:**\n{extracted_text}\n\n **AI Caption:** {caption}"
+        return f"**Extracted Text:**\n{extracted_text}\n\n**AI Caption:** {caption}"
+
+    except Exception as e:
+        return f"Error analyzing image: {str(e)}"
+
 
     except Exception as e:
         return f"Error analyzing image: {str(e)}"
