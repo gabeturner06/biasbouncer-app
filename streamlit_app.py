@@ -18,6 +18,8 @@ from biasbouncer.tools.research_tools import research_tool, scrape_webpage_tool
 # ------------------------------------------------------------------------------
 st.set_page_config(layout="wide")
 
+os.environ["STREAMLIT_SERVER_RUN_ON_SAVE"] = "false"
+
 # ------------------------------------------------------------------------------
 # 2. Access API Key(s)
 # ------------------------------------------------------------------------------
