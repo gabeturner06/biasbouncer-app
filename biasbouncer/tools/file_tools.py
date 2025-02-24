@@ -10,7 +10,6 @@ import docx
 from docx import Document
 import mimetypes
 from openpyxl import Workbook
-import easyocr
 
 # Ensure session state has a temp directory
 def ensure_temp_dir():
@@ -105,8 +104,6 @@ async def write_tool(filename: str, content: str):
 
     except Exception as e:
         return f"❌ Error writing to file: {str(e)}"
-    
-image_text_reader = easyocr.Reader(['en'])
 
 async def read_tool(filename: str):
     try:
@@ -146,15 +143,6 @@ async def read_tool(filename: str):
         elif file_ext == "docx":
             content = await read_docx(temp_file_path)
 
-        elif file_ext == "png":
-            return await analyze_image(temp_file_path)
-        
-        elif file_ext == "jpg":
-            return await analyze_image(temp_file_path)        
-
-        elif file_ext == "jpeg":
-            return await analyze_image(temp_file_path)
-
         else:
             mime_type, _ = mimetypes.guess_type(temp_file_path)
             return f"Error: Unsupported file type '{file_ext}' (MIME type: {mime_type})."
@@ -164,16 +152,6 @@ async def read_tool(filename: str):
     except Exception as e:
         return f"Error reading from file: {str(e)}"
     
-async def analyze_image(image_path: str):
-    try:
-        # Perform OCR with EasyOCR
-        result = image_text_reader.readtext(image_path, detail=0)  # Extract text without bounding boxes
-        extracted_text = "\n".join(result) if result else "No readable text detected."
-
-        return f"**Extracted Text:**\n{extracted_text}"
-
-    except Exception as e:
-        return f"Error analyzing image: {str(e)}"
 
 # PDF Reader
 async def read_pdf(pdf_path: str):
