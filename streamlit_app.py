@@ -387,10 +387,9 @@ with st.sidebar:
         st.divider()
         st.write("### Number of Agents")
         st.session_state["agent_number"] = st.slider("", 2, 6, st.session_state["agent_number"])
-
-        st.divider()
         
-        if st.session_state["companies"]:  # Show agent selection only after agents are determined
+        if st.session_state["companies"]:
+            st.divider()
             st.write("### Select Agents to Respond")
             
             # Check if all agents are selected by default
