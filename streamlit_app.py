@@ -379,9 +379,27 @@ with st.sidebar:
     if "agent_number" not in st.session_state:
         st.session_state["agent_number"] = 4  # Default value
 
+    if "selected_agents" not in st.session_state:
+        st.session_state["selected_agents"] = []  # Agents selected by the user
+
     @st.dialog("Agent Settings")
     def agent_settings():
         st.session_state["agent_number"] = st.slider("Number of Agents", 2, 6, st.session_state["agent_number"])
+        
+        if st.session_state["companies"]:  # Show agent selection only after agents are determined
+            st.write("### Select Agents to Respond")
+            
+            # Check if all agents are selected by default
+            all_selected = len(st.session_state["selected_agents"]) == len(st.session_state["companies"])
+            all_agents_checkbox = st.checkbox("All Agents", value=all_selected)
+            
+            if all_agents_checkbox:
+                st.session_state["selected_agents"] = st.session_state["companies"]
+            else:
+                st.session_state["selected_agents"] = [
+                    company for company in st.session_state["companies"]
+                    if st.checkbox(company, value=company in st.session_state["selected_agents"])
+                ]
 
     if st.button("Agent Settings", use_container_width=True, type="secondary"):
         agent_settings()
@@ -395,16 +413,15 @@ with st.sidebar:
         # If we haven't determined perspectives yet, do so now
         with st.spinner("Preparing Perspectives..."):
             if not st.session_state["companies"]:
-                # Use agent_number from session state
                 st.session_state["companies"] = asyncio.run(determine_companies(user_input, st.session_state["agent_number"]))
+                st.session_state["selected_agents"] = st.session_state["companies"]  # Default to all agents for the first response
 
-        # Run all agents concurrently
+        # Run only selected agents
         with st.spinner("Preparing Responses..."):
-            responses = asyncio.run(
-                run_agents(st.session_state["companies"], user_input, st.session_state["chat_history"])
-            )
+            selected_companies = st.session_state["selected_agents"]
+            responses = asyncio.run(run_agents(selected_companies, user_input, st.session_state["chat_history"]))
 
-        # Append and display each agent's response
+        # Append and display each selected agent's response
         for company, text in responses.items():
             st.session_state["chat_history"].append({"role": company, "content": text})
             with messages_container:
