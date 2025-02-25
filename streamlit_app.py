@@ -376,9 +376,15 @@ with st.sidebar:
         if st.button("Upload", type="primary"):
             upload_files()
 
-    agent_settings = st.button("Agent Settings", use_container_width=True, type="secondary")
+    if "agent_number" not in st.session_state:
+        st.session_state["agent_number"] = 4  # Default value
 
-    agent_number = st.slider("Number of Agents", 2, 6, 4)
+    @st.dialog("Agent Settings")
+    def agent_settings():
+        st.session_state["agent_number"] = st.slider("Number of Agents", 2, 6, st.session_state["agent_number"])
+
+    if st.button("Agent Settings", use_container_width=True, type="secondary"):
+        agent_settings()
 
     if user_input:
         # Add user's message to the chat
@@ -389,9 +395,8 @@ with st.sidebar:
         # If we haven't determined perspectives yet, do so now
         with st.spinner("Preparing Perspectives..."):
             if not st.session_state["companies"]:
-                # Pass agent_number along with the user_input
-                st.session_state["companies"] = asyncio.run(determine_companies(user_input, agent_number))
-
+                # Use agent_number from session state
+                st.session_state["companies"] = asyncio.run(determine_companies(user_input, st.session_state["agent_number"]))
 
         # Run all agents concurrently
         with st.spinner("Preparing Responses..."):
