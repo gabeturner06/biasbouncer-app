@@ -337,7 +337,7 @@ with st.sidebar:
     # Chat input at the bottom
 
 
-    col1, col2 = st.columns([0.83,0.17])
+    col1, col2 = st.columns([0.82,0.18])
 
     with col1:
         user_input = st.chat_input("Work with the Agents")
