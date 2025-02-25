@@ -386,7 +386,7 @@ with st.sidebar:
     def agent_settings():
         st.divider()
         st.write("### Number of Agents")
-        st.session_state["agent_number"] = st.slider(2, 6, st.session_state["agent_number"])
+        st.session_state["agent_number"] = st.slider("", 2, 6, st.session_state["agent_number"])
 
         st.divider()
         
