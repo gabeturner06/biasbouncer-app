@@ -384,7 +384,11 @@ with st.sidebar:
 
     @st.dialog("Agent Settings")
     def agent_settings():
-        st.session_state["agent_number"] = st.slider("Number of Agents", 2, 6, st.session_state["agent_number"])
+        st.divider()
+        st.write("### Number of Agents")
+        st.session_state["agent_number"] = st.slider(2, 6, st.session_state["agent_number"])
+
+        st.divider()
         
         if st.session_state["companies"]:  # Show agent selection only after agents are determined
             st.write("### Select Agents to Respond")
