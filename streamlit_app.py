@@ -404,7 +404,7 @@ with st.sidebar:
                     if st.checkbox(company, value=company in st.session_state["selected_agents"])
                 ]
 
-    if st.button("Agent Settings", use_container_width=True, type="secondary"):
+    if st.button("Agent Response Settings", use_container_width=True, type="secondary"):
         agent_settings()
 
     if user_input:
