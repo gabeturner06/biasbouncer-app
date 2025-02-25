@@ -376,6 +376,8 @@ with st.sidebar:
         if st.button("Upload", type="primary"):
             upload_files()
 
+    agent_settings = st.button("Agent Settings", use_container_width=True, type="secondary")
+
     agent_number = st.slider("Number of Agents", 2, 6, 4)
 
     if user_input:
