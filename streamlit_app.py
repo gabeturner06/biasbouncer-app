@@ -373,7 +373,7 @@ with st.sidebar:
                 st.session_state["file_updated"] = True  
                 st.rerun()  # Refresh UI
 
-        if st.button("➕", type="primary"):
+        if st.button("&#10133", type="primary"):
             upload_files()
 
     agent_number = st.slider("Number of Agents", 2, 6, 4)
