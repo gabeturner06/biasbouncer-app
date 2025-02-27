@@ -372,7 +372,7 @@ with st.sidebar:
                 st.session_state["file_updated"] = True  
                 st.rerun()  # Refresh UI
 
-        if st.button("Upload", type="primary"):
+        if st.button("Upload", type="primary", use_container_width=True):
             upload_files()
 
     with col2:
