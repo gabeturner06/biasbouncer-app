@@ -339,7 +339,7 @@ with st.sidebar:
 
     user_input = st.chat_input("Work with the Agents")
 
-    col1, col2 = st.columns([0.24,0.76])
+    col1, col2 = st.columns([0.5,0.5])
 
     with col1:
         @st.dialog("Upload Files")
