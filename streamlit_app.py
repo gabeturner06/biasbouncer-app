@@ -166,11 +166,10 @@ async def run_agents(companies: List[str], user_message: str, conversation: List
 # ------------------------------------------------------------------------------
 # 6. Main Page Layout
 # ------------------------------------------------------------------------------
+
 LOGO_URL_LARGE = "biasbouncer/images/biasbouncer-logo.png"
 st.logo(image=LOGO_URL_LARGE, link="https://biasbouncer.com", size="large")
 st.markdown("<h1 style='text-align: center;'><span style='color: red;'>BiasBouncer</span></h1>", unsafe_allow_html=True)
-st.markdown("##")
-st.title("Brainstorm Chat")
 st.markdown("<h3 style='text-align: center;'>Team WorkBench</h3>", unsafe_allow_html=True)
 st.divider()
 
@@ -317,6 +316,7 @@ with col1:
 # 7. Sidebar Chat
 # ------------------------------------------------------------------------------
 with st.sidebar:
+    st.title("Brainstorm Chat")
 
     messages_container = st.container()
 
@@ -372,7 +372,7 @@ with st.sidebar:
                 st.session_state["file_updated"] = True  
                 st.rerun()  # Refresh UI
 
-        if st.button("Upload", type="primary", use_container_width=True):
+        if st.button("Upload", type="primary"):
             upload_files()
 
     with col2:
@@ -398,7 +398,7 @@ with st.sidebar:
                         if st.checkbox(company, value=company in st.session_state["selected_agents"])
                     ]
 
-        if st.button("Settings", use_container_width=True, type="secondary"):
+        if st.button("Agent Response Settings", use_container_width=True, type="secondary"):
             agent_settings()
 
     if "agent_number" not in st.session_state:
