@@ -372,7 +372,7 @@ with st.sidebar:
                 st.session_state["file_updated"] = True  
                 st.rerun()  # Refresh UI
 
-        if st.button("Upload", type="primary"):
+        if st.button("Upload", type="primary", use_container_width=True):
             upload_files()
 
     with col2:
@@ -398,7 +398,7 @@ with st.sidebar:
                         if st.checkbox(company, value=company in st.session_state["selected_agents"])
                     ]
 
-        if st.button("Agent Response Settings", use_container_width=True, type="secondary"):
+        if st.button("Settings", use_container_width=True, type="secondary"):
             agent_settings()
 
     if "agent_number" not in st.session_state:
