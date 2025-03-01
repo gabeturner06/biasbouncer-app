@@ -167,7 +167,7 @@ async def run_agents(companies: List[str], user_message: str, conversation: List
 # 6. Main Page Layout
 # ------------------------------------------------------------------------------
 
-col1, col2, col3 = st.columns([0.15, 0.77, 0.08])
+col1, col2, col3 = st.columns([0.15, 0.76, 0.09])
 
 with col1:
     @st.dialog("How BiasBouncer Works")
