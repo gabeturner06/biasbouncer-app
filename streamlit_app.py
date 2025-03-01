@@ -337,7 +337,7 @@ with st.sidebar:
         @st.dialog("Upload Files")
         def upload_files():
             uploaded_files = st.file_uploader(
-                "Upload a File to BiasBouncer. Remember to give the agents the name of the file to read in your question.",
+                "Upload a File to BiasBouncer. Remember to give the agents the full name of the file (including file type) to read in your question.",
                 accept_multiple_files=True
             )
 
