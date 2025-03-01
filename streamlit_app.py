@@ -327,8 +327,6 @@ with col1:
 with st.sidebar:
     st.title("Brainstorm Chat")
 
-    messages_container = st.container()
-
     user_input = st.chat_input("Work with the Agents")
 
     col1, col2 = st.columns([0.5,0.5])
@@ -392,6 +390,8 @@ with st.sidebar:
 
         if st.button("Settings", use_container_width=True, type="secondary"):
             agent_settings()
+    
+    messages_container = st.container()
 
     # Display past conversation in the side bar
     with messages_container:
