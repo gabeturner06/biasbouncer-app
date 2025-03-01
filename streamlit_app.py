@@ -327,7 +327,7 @@ with col1:
 with st.sidebar:
     st.title("Brainstorm Chat")
     
-    messages_container = st.container(height=580, border=None)
+    messages_container = st.container(height=575, border=None)
 
     # Display past conversation in the side bar
     with messages_container:
