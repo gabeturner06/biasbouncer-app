@@ -391,7 +391,7 @@ with st.sidebar:
         if st.button("Settings", use_container_width=True, type="secondary"):
             agent_settings()
     
-    messages_container = st.container()
+    messages_container = st.container(height=400)
 
     # Display past conversation in the side bar
     with messages_container:
