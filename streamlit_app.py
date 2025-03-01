@@ -167,35 +167,41 @@ async def run_agents(companies: List[str], user_message: str, conversation: List
 # 6. Main Page Layout
 # ------------------------------------------------------------------------------
 
+col1, col2, col3 = st.columns([0.1, 0.8, 0.1])
 
-@st.dialog("How BiasBouncer Works")
-def explain():
-    st.divider()
-    st.write("Every idea begins with a Brainstorming session. Click the sidebar arrow at the top left, then ask a question or pitch your idea in the Brainstorm Chat. BiasBouncer explores different perspectives to address your idea’s complications, with each agent responding casually and outlining their reasoning. You can also create files in the chat to store your ideas. Once your plan is ready, orchestrate your work!")
-    st.write("Agents perform tasks like research, coding, or reviewing. These tasks populate in the 'To Do' column and gradually move to 'Done' for review. Chat with agents for feedback, and when all tasks are complete, your finished project will be ready to download!")
-    st.caption("As of 2/22/2025, Brainstorm Chat (with file-creation and web research) is operational. Team WorkBench functionality is coming soon.")
-if st.button("How it Works", type="secondary"):
-    explain()
+with col1:
+    @st.dialog("How BiasBouncer Works")
+    def explain():
+        st.divider()
+        st.write("Every idea begins with a Brainstorming session. Click the sidebar arrow at the top left, then ask a question or pitch your idea in the Brainstorm Chat. BiasBouncer explores different perspectives to address your idea’s complications, with each agent responding casually and outlining their reasoning. You can also create files in the chat to store your ideas. Once your plan is ready, orchestrate your work!")
+        st.write("Agents perform tasks like research, coding, or reviewing. These tasks populate in the 'To Do' column and gradually move to 'Done' for review. Chat with agents for feedback, and when all tasks are complete, your finished project will be ready to download!")
+        st.caption("As of 2/22/2025, Brainstorm Chat (with file-creation and web research) is operational. Team WorkBench functionality is coming soon.")
+    if st.button("How it Works", type="secondary"):
+        explain()
 
-@st.dialog("Donate to BiasBouncer")
-def explain():
-    st.divider()
-    st.write("Your support goes into developing BiasBouncer and keeping it free to try for our very first users like you. Thank you!")
-    st.markdown(
-    """
-    <div style="display: flex; justify-content: center; margin-top: 20px;">
-        <a href="https://donate.stripe.com/bIY2bbeYC1I2208002?locale=en" target="_blank">
-            <button style="background-color:#FF4B4B; color:white; padding:10px 20px; font-size:16px; border:none; border-radius:5px; cursor:pointer;">
-                Donate with Stripe
-            </button>
-        </a>
-    </div>
-    <br>
-    """,
-    unsafe_allow_html=True
-    )
-if st.button("Donate", type="secondary"):
-    explain()
+with col2:
+    pass
+
+with col3:
+    @st.dialog("Donate to BiasBouncer")
+    def explain():
+        st.divider()
+        st.write("Your support goes into developing BiasBouncer and keeping it free to try for our very first users like you. Thank you!")
+        st.markdown(
+        """
+        <div style="display: flex; justify-content: center; margin-top: 20px;">
+            <a href="https://donate.stripe.com/bIY2bbeYC1I2208002?locale=en" target="_blank">
+                <button style="background-color:#FF4B4B; color:white; padding:10px 20px; font-size:16px; border:none; border-radius:5px; cursor:pointer;">
+                    Donate with Stripe
+                </button>
+            </a>
+        </div>
+        <br>
+        """,
+        unsafe_allow_html=True
+        )
+    if st.button("Donate", type="secondary"):
+        explain()
 
 LOGO_URL_LARGE = "biasbouncer/images/biasbouncer-logo.png"
 st.logo(image=LOGO_URL_LARGE, link="https://biasbouncer.com", size="large")
