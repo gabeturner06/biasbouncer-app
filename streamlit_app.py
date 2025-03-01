@@ -204,8 +204,16 @@ with col3:
         explain()
 
 LOGO_URL_LARGE = "biasbouncer/images/biasbouncer-logo.png"
-st.logo(image=LOGO_URL_LARGE, link="https://biasbouncer.com", size="large")
-st.markdown("<h1 style='text-align: center;'><span style='color: red;'>BiasBouncer</span></h1>", unsafe_allow_html=True)
+
+col1, col2, col3 = st.columns([0.1,0.15,0.75])
+with col1:
+    st.logo(image=LOGO_URL_LARGE, link="https://biasbouncer.com", size="large")
+
+with col2:
+    st.title("BiasBouncer")
+
+with col3:
+    pass
 
 st.divider()
 
