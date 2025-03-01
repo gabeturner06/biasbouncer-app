@@ -327,10 +327,11 @@ with col1:
 with st.sidebar:
     st.title("Brainstorm Chat")
 
-    # Keep user input and buttons at the top
+    messages_container = st.container()
+
     user_input = st.chat_input("Work with the Agents")
 
-    col1, col2 = st.columns([0.5, 0.5])
+    col1, col2 = st.columns([0.5,0.5])
 
     with col1:
         @st.dialog("Upload Files")
@@ -392,49 +393,47 @@ with st.sidebar:
         if st.button("Settings", use_container_width=True, type="secondary"):
             agent_settings()
 
-    # Messages container with a fixed max height and scrollable behavior
-    messages_container = st.container()
+    # Display past conversation in the side bar
     with messages_container:
-        st.markdown(
-            """
-            <style>
-                .st-emotion-cache-1kyxreq {  /* Adjust this selector as needed */
-                    max-height: 400px;
-                    overflow-y: auto;
-                }
-            </style>
-            """,
-            unsafe_allow_html=True,
-        )
-
         for msg in st.session_state["chat_history"]:
+            if "agent_number" not in st.session_state:
+                st.session_state["agent_number"] = 4  # Default value
+
+            if "selected_agents" not in st.session_state:
+                st.session_state["selected_agents"] = []  # Agents selected by the user
+
+            if user_input:
+                # Add user's message to the chat
+                st.session_state["chat_history"].append({"role": "user", "content": user_input})
+                with messages_container:
+                    st.chat_message("user").write(user_input)
+
+                # If we haven't determined perspectives yet, do so now
+                with st.spinner("Preparing Perspectives..."):
+                    if not st.session_state["companies"]:
+                        st.session_state["companies"] = asyncio.run(determine_companies(user_input, st.session_state["agent_number"]))
+                        st.session_state["selected_agents"] = st.session_state["companies"]  # Default to all agents for the first response
+
+                # Run only selected agents
+                with st.spinner("Preparing Responses..."):
+                    selected_companies = st.session_state["selected_agents"]
+                    responses = asyncio.run(run_agents(selected_companies, user_input, st.session_state["chat_history"]))
+
+                # Append and display each selected agent's response
+                for company, text in responses.items():
+                    st.session_state["chat_history"].append({"role": company, "content": text})
+                    with messages_container:
+                        st.chat_message("assistant").write(f"**{company}**: {text}")
             role = msg["role"]
             content = msg["content"]
 
-            # Display user and assistant messages
+            # If role is "user", show user bubble
             if role == "user":
                 st.chat_message("user").write(content)
             else:
+                # If role is one of the agent names, we show it as "assistant"
+                # but label it with the role name
                 st.chat_message("assistant").write(f"**{role}**: {content}")
-
-    # Handle new user input and responses
-    if user_input:
-        st.session_state["chat_history"].append({"role": "user", "content": user_input})
-        st.chat_message("user").write(user_input)
-
-        with st.spinner("Preparing Perspectives..."):
-            if not st.session_state["companies"]:
-                st.session_state["companies"] = asyncio.run(determine_companies(user_input, st.session_state["agent_number"]))
-                st.session_state["selected_agents"] = st.session_state["companies"]  # Default to all agents for the first response
-
-        with st.spinner("Preparing Responses..."):
-            selected_companies = st.session_state["selected_agents"]
-            responses = asyncio.run(run_agents(selected_companies, user_input, st.session_state["chat_history"]))
-
-        for company, text in responses.items():
-            st.session_state["chat_history"].append({"role": company, "content": text})
-            st.chat_message("assistant").write(f"**{company}**: {text}")
-
 
 
         
