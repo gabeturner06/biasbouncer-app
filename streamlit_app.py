@@ -176,7 +176,7 @@ with col1:
         st.write("Every idea begins with a Brainstorming session. Click the sidebar arrow at the top left, then ask a question or pitch your idea in the Brainstorm Chat. BiasBouncer explores different perspectives to address your idea’s complications, with each agent responding casually and outlining their reasoning. You can also create files in the chat to store your ideas. Once your plan is ready, orchestrate your work!")
         st.write("Agents perform tasks like research, coding, or reviewing. These tasks populate in the 'To Do' column and gradually move to 'Done' for review. Chat with agents for feedback, and when all tasks are complete, your finished project will be ready to download!")
         st.caption("As of 2/22/2025, Brainstorm Chat (with file-creation and web research) is operational. Team WorkBench functionality is coming soon.")
-    if st.button("How it Works", type="secondary"):
+    if st.button("How it Works", type="primary"):
         explain()
 
 with col2:
