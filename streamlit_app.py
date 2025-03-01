@@ -167,19 +167,6 @@ async def run_agents(companies: List[str], user_message: str, conversation: List
 # 6. Main Page Layout
 # ------------------------------------------------------------------------------
 
-
-LOGO_URL_LARGE = "biasbouncer/images/biasbouncer-logo.png"
-
-col1, col2, col3 = st.columns([0.1,0.15,0.75])
-with col1:
-    st.logo(image=LOGO_URL_LARGE, link="https://biasbouncer.com", size="large")
-
-with col2:
-    st.header("BiasBouncer")
-
-with col3:
-    pass
-
 col1, col2, col3 = st.columns([0.15, 0.75, 0.1])
 
 with col1:
@@ -216,6 +203,9 @@ with col3:
     if st.button("Donate", type="secondary"):
         explain()
 
+LOGO_URL_LARGE = "biasbouncer/images/biasbouncer-logo.png"
+st.logo(image=LOGO_URL_LARGE, link="https://biasbouncer.com", size="large")
+st.markdown("<h1 style='text-align: center;'><span style='color: red;'>BiasBouncer</span></h1>", unsafe_allow_html=True)
 
 st.divider()
 
