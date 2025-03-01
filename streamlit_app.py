@@ -167,13 +167,6 @@ async def run_agents(companies: List[str], user_message: str, conversation: List
 # 6. Main Page Layout
 # ------------------------------------------------------------------------------
 
-LOGO_URL_LARGE = "biasbouncer/images/biasbouncer-logo.png"
-st.logo(image=LOGO_URL_LARGE, link="https://biasbouncer.com", size="large")
-st.markdown("<h1 style='text-align: center;'><span style='color: red;'>BiasBouncer</span></h1>", unsafe_allow_html=True)
-
-st.divider()
-
-st.subheader("Team WorkBench")
 
 @st.dialog("How BiasBouncer Works")
 def explain():
@@ -203,6 +196,14 @@ def explain():
     )
 if st.button("Donate", type="secondary"):
     explain()
+
+LOGO_URL_LARGE = "biasbouncer/images/biasbouncer-logo.png"
+st.logo(image=LOGO_URL_LARGE, link="https://biasbouncer.com", size="large")
+st.markdown("<h1 style='text-align: center;'><span style='color: red;'>BiasBouncer</span></h1>", unsafe_allow_html=True)
+
+st.divider()
+
+st.subheader("Team WorkBench")
 
 
 def create_task_dialog(task_name: str):
