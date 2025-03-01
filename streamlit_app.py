@@ -326,6 +326,7 @@ with col1:
 # ------------------------------------------------------------------------------
 with st.sidebar:
     st.title("Brainstorm Chat")
+    st.markdown(help="This is a tooltip.")
 
     messages_container = st.container()
 
