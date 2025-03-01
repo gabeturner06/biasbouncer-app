@@ -329,23 +329,6 @@ with st.sidebar:
 
     messages_container = st.container()
 
-    # Display past conversation in the side bar
-    with messages_container:
-        for msg in st.session_state["chat_history"]:
-            role = msg["role"]
-            content = msg["content"]
-
-            # If role is "user", show user bubble
-            if role == "user":
-                st.chat_message("user").write(content)
-            else:
-                # If role is one of the agent names, we show it as "assistant"
-                # but label it with the role name
-                st.chat_message("assistant").write(f"**{role}**: {content}")
-
-    # Chat input at the bottom
-
-
     user_input = st.chat_input("Work with the Agents")
 
     col1, col2 = st.columns([0.5,0.5])
@@ -409,6 +392,21 @@ with st.sidebar:
 
         if st.button("Settings", use_container_width=True, type="secondary"):
             agent_settings()
+
+    # Display past conversation in the side bar
+    with messages_container:
+        for msg in st.session_state["chat_history"]:
+            role = msg["role"]
+            content = msg["content"]
+
+            # If role is "user", show user bubble
+            if role == "user":
+                st.chat_message("user").write(content)
+            else:
+                # If role is one of the agent names, we show it as "assistant"
+                # but label it with the role name
+                st.chat_message("assistant").write(f"**{role}**: {content}")
+
 
     if "agent_number" not in st.session_state:
         st.session_state["agent_number"] = 4  # Default value
