@@ -169,7 +169,6 @@ async def run_agents(companies: List[str], user_message: str, conversation: List
 
 LOGO_URL_LARGE = "biasbouncer/images/biasbouncer-logo.png"
 st.logo(image=LOGO_URL_LARGE, link="https://biasbouncer.com", size="large")
-st.markdown("<h1 style='text-align: center;'><span style='color: red;'>BiasBouncer</span></h1>", unsafe_allow_html=True)
 st.markdown("<h3 style='text-align: center;'>Team WorkBench</h3>", unsafe_allow_html=True)
 st.divider()
 
@@ -316,6 +315,10 @@ with col1:
 # 7. Sidebar Chat
 # ------------------------------------------------------------------------------
 with st.sidebar:
+
+    st.markdown("<h1 style='text-align: center;'><span style='color: red;'>BiasBouncer</span></h1>", unsafe_allow_html=True)
+    st.divider()
+
     st.title("Brainstorm Chat")
 
     messages_container = st.container()
