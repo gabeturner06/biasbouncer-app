@@ -210,7 +210,7 @@ with col1:
     st.logo(image=LOGO_URL_LARGE, link="https://biasbouncer.com", size="large")
 
 with col2:
-    st.title("BiasBouncer")
+    st.header("BiasBouncer")
 
 with col3:
     pass
