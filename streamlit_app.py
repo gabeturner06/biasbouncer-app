@@ -64,23 +64,19 @@ async def determine_companies(message: str, agent_number: int) -> List[str]:
 async def handle_tool_request(tool_data, chain, company, user_message, conversation_so_far, all_perspectives):
     updated_conversation = conversation_so_far
     if tool_data["tool"] == "read" and read_tool:
-        with st.spinner("Reading Files"):
             filename = tool_data["filename"]
             read_data = await read_tool(filename)
             updated_conversation += f"\n\n[File '{filename}' content:]\n{read_data}"
     elif tool_data["tool"] == "write" and write_tool:
-        with st.spinner("Writing to File"):
             filename = tool_data["filename"]
             content = tool_data["content"]
             write_result = await write_tool(filename, content)
             return f"{write_result}"
     elif tool_data["tool"] == "research" and research_tool:
-        with st.spinner("Searching the Web"):
             query = tool_data["query"]
             search_results = await research_tool(query)
             updated_conversation += f"\n\n[Research on '{query}':]\n{search_results}"
     elif tool_data["tool"] == "scrape_webpage" and scrape_webpage_tool:
-        with st.spinner("Reading Web Pages"):
             url = tool_data["url"]
             scrape_results = await scrape_webpage_tool(url)
             updated_conversation += f"\n\n[Webpage '{url}' info:]\n{scrape_results.get('content', 'No content.')}"

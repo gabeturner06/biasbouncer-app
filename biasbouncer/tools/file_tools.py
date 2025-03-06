@@ -25,132 +25,134 @@ def list_files():
 # Function to write a file and trigger UI update
 
 async def write_tool(filename: str, content: str):
-    try:
-        temp_dir = ensure_temp_dir()  # Ensure temp directory is initialized
-        temp_file_path = os.path.join(temp_dir, filename)
+    with st.spinner("Writing to File"):
+        try:
+            temp_dir = ensure_temp_dir()  # Ensure temp directory is initialized
+            temp_file_path = os.path.join(temp_dir, filename)
 
-        # Determine file extension
-        file_ext = filename.lower().split('.')[-1]
+            # Determine file extension
+            file_ext = filename.lower().split('.')[-1]
 
-        if file_ext == "txt":
-            mode = 'a' if os.path.exists(temp_file_path) else 'w'
-            async with aiofiles.open(temp_file_path, mode=mode, encoding='utf-8') as file:
-                await file.write(content)
-        
-        elif file_ext == "md":
-            mode = 'a' if os.path.exists(temp_file_path) else 'w'
-            async with aiofiles.open(temp_file_path, mode=mode, encoding='utf-8') as file:
-                await file.write(content)
-
-        elif file_ext == "py":
-            mode = 'a' if os.path.exists(temp_file_path) else 'w'
-            async with aiofiles.open(temp_file_path, mode=mode, encoding='utf-8') as file:
-                await file.write(content)
-
-        elif file_ext == "html":
-            mode = 'w'  # Always overwrite structured files
-            async with aiofiles.open(temp_file_path, mode=mode, encoding='utf-8') as file:
-                await file.write(content)
-
-        elif file_ext == "css":
-            mode = 'w'  # Always overwrite structured files
-            async with aiofiles.open(temp_file_path, mode=mode, encoding='utf-8') as file:
-                await file.write(content)
-        
-        elif file_ext == "json":
-            mode = 'w'  # Always overwrite structured files
-            async with aiofiles.open(temp_file_path, mode=mode, encoding='utf-8') as file:
-                await file.write(content)
-
-        elif file_ext == "pdf":
-            doc = fitz.open()
-            page = doc.new_page()
+            if file_ext == "txt":
+                mode = 'a' if os.path.exists(temp_file_path) else 'w'
+                async with aiofiles.open(temp_file_path, mode=mode, encoding='utf-8') as file:
+                    await file.write(content)
             
-            text = content.replace("\n", " ")  # Ensure line breaks are handled properly
-            text_rect = fitz.Rect(50, 50, 550, 800)  # Define text area on the page
+            elif file_ext == "md":
+                mode = 'a' if os.path.exists(temp_file_path) else 'w'
+                async with aiofiles.open(temp_file_path, mode=mode, encoding='utf-8') as file:
+                    await file.write(content)
+
+            elif file_ext == "py":
+                mode = 'a' if os.path.exists(temp_file_path) else 'w'
+                async with aiofiles.open(temp_file_path, mode=mode, encoding='utf-8') as file:
+                    await file.write(content)
+
+            elif file_ext == "html":
+                mode = 'w'  # Always overwrite structured files
+                async with aiofiles.open(temp_file_path, mode=mode, encoding='utf-8') as file:
+                    await file.write(content)
+
+            elif file_ext == "css":
+                mode = 'w'  # Always overwrite structured files
+                async with aiofiles.open(temp_file_path, mode=mode, encoding='utf-8') as file:
+                    await file.write(content)
             
-            page.insert_textbox(text_rect, text, fontsize=12, fontname="helv", align=0)
-            doc.save(temp_file_path)
+            elif file_ext == "json":
+                mode = 'w'  # Always overwrite structured files
+                async with aiofiles.open(temp_file_path, mode=mode, encoding='utf-8') as file:
+                    await file.write(content)
+
+            elif file_ext == "pdf":
+                doc = fitz.open()
+                page = doc.new_page()
+                
+                text = content.replace("\n", " ")  # Ensure line breaks are handled properly
+                text_rect = fitz.Rect(50, 50, 550, 800)  # Define text area on the page
+                
+                page.insert_textbox(text_rect, text, fontsize=12, fontname="helv", align=0)
+                doc.save(temp_file_path)
 
 
-        elif file_ext == "docx":
-            doc = Document()
-            for paragraph in content.split("\n"):  # Ensure paragraphs are separated properly
-                doc.add_paragraph(paragraph)
-            doc.save(temp_file_path)
+            elif file_ext == "docx":
+                doc = Document()
+                for paragraph in content.split("\n"):  # Ensure paragraphs are separated properly
+                    doc.add_paragraph(paragraph)
+                doc.save(temp_file_path)
 
 
-        elif file_ext == "xlsx":
-            wb = Workbook()
-            ws = wb.active
-            for i, line in enumerate(content.split("\n"), start=1):
-                cells = line.split("\t") if "\t" in line else line.split(",")  # Handle CSV or tab-separated data
-                for j, cell in enumerate(cells, start=1):
-                    ws.cell(row=i, column=j, value=cell)
-            wb.save(temp_file_path)
+            elif file_ext == "xlsx":
+                wb = Workbook()
+                ws = wb.active
+                for i, line in enumerate(content.split("\n"), start=1):
+                    cells = line.split("\t") if "\t" in line else line.split(",")  # Handle CSV or tab-separated data
+                    for j, cell in enumerate(cells, start=1):
+                        ws.cell(row=i, column=j, value=cell)
+                wb.save(temp_file_path)
 
-        elif file_ext == "csv":
-            with open(temp_file_path, mode="w", newline="", encoding="utf-8") as file:
-                writer = csv.writer(file)
-                for line in content.split("\n"):
-                    writer.writerow(line.split(",")) 
+            elif file_ext == "csv":
+                with open(temp_file_path, mode="w", newline="", encoding="utf-8") as file:
+                    writer = csv.writer(file)
+                    for line in content.split("\n"):
+                        writer.writerow(line.split(",")) 
 
 
-        else:
-            return f"Error: Unsupported file type '{file_ext}'. Supported formats: TXT, PDF, DOCX, XLSX."
+            else:
+                return f"Error: Unsupported file type '{file_ext}'. Supported formats: TXT, PDF, DOCX, XLSX."
 
-        st.session_state["file_updated"] = True  # Trigger UI refresh
-        return f"✅ Successfully wrote to '{temp_file_path}'."
+            st.session_state["file_updated"] = True  # Trigger UI refresh
+            return f"✅ Successfully wrote to '{temp_file_path}'."
 
-    except Exception as e:
-        return f"❌ Error writing to file: {str(e)}"
+        except Exception as e:
+            return f"❌ Error writing to file: {str(e)}"
 
 async def read_tool(filename: str):
-    try:
-        temp_dir = ensure_temp_dir()
-        temp_file_path = os.path.join(temp_dir, filename)
+    with st.spinner("Reading Files"):
+        try:
+            temp_dir = ensure_temp_dir()
+            temp_file_path = os.path.join(temp_dir, filename)
 
-        if not os.path.exists(temp_file_path):
-            return f"Error: Temporary file '{filename}' does not exist."
+            if not os.path.exists(temp_file_path):
+                return f"Error: Temporary file '{filename}' does not exist."
 
-        # Determine file extension
-        file_ext = filename.lower().split('.')[-1]
+            # Determine file extension
+            file_ext = filename.lower().split('.')[-1]
 
-        if file_ext == "txt":
-            async with aiofiles.open(temp_file_path, mode='r', encoding='utf-8') as file:
-                await file.read(content)
-        
-        elif file_ext == "md":
-            async with aiofiles.open(temp_file_path, mode='r', encoding='utf-8') as file:
-                await file.read(content)
+            if file_ext == "txt":
+                async with aiofiles.open(temp_file_path, mode='r', encoding='utf-8') as file:
+                    await file.read(content)
+            
+            elif file_ext == "md":
+                async with aiofiles.open(temp_file_path, mode='r', encoding='utf-8') as file:
+                    await file.read(content)
 
-        elif file_ext == "py":
-            async with aiofiles.open(temp_file_path, mode='r', encoding='utf-8') as file:
-                await file.read(content)
+            elif file_ext == "py":
+                async with aiofiles.open(temp_file_path, mode='r', encoding='utf-8') as file:
+                    await file.read(content)
 
-        elif file_ext == "pdf":
-            content = await read_pdf(temp_file_path)
+            elif file_ext == "pdf":
+                content = await read_pdf(temp_file_path)
 
-        elif file_ext == "csv":
-            content = await read_csv(temp_file_path)
+            elif file_ext == "csv":
+                content = await read_csv(temp_file_path)
 
-        elif file_ext == "json":
-            content = await read_json(temp_file_path)
+            elif file_ext == "json":
+                content = await read_json(temp_file_path)
 
-        elif file_ext in ["xls", "xlsx"]:
-            content = await read_excel(temp_file_path)
+            elif file_ext in ["xls", "xlsx"]:
+                content = await read_excel(temp_file_path)
 
-        elif file_ext == "docx":
-            content = await read_docx(temp_file_path)
+            elif file_ext == "docx":
+                content = await read_docx(temp_file_path)
 
-        else:
-            mime_type, _ = mimetypes.guess_type(temp_file_path)
-            return f"Error: Unsupported file type '{file_ext}' (MIME type: {mime_type})."
+            else:
+                mime_type, _ = mimetypes.guess_type(temp_file_path)
+                return f"Error: Unsupported file type '{file_ext}' (MIME type: {mime_type})."
 
-        return content
+            return content
 
-    except Exception as e:
-        return f"Error reading from file: {str(e)}"
+        except Exception as e:
+            return f"Error reading from file: {str(e)}"
     
 
 # PDF Reader
