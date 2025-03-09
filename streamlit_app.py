@@ -263,10 +263,6 @@ with col1:
         def view_file():
             with st.spinner("Reading file..."):
 
-                file_content = asyncio.run(read_tool(selected_file))
-            
-                st.text_area("File Content", file_content, height=400)
-
                 temp_dir = ensure_temp_dir()
                 temp_file_path = os.path.join(temp_dir, selected_file)
 
@@ -290,7 +286,7 @@ with col1:
 
                 elif file_ext in ["pdf", "docx", "xlsx"]:
                     with open(temp_file_path, "rb") as f:
-                        file_content = f.read()
+                        file_content = asyncio.run(read_tool(selected_file))
                     mime_types = {
                         "pdf": "application/pdf",
                         "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -298,6 +294,7 @@ with col1:
                     }
                     mime_type = mime_types[file_ext]
 
+                    st.text_area("File Content", file_content, height=400)
                 else:
                     st.error(f"Unsupported file type: {file_ext}")
                     return
