@@ -1,8 +1,10 @@
 from langchain_community.tools import DuckDuckGoSearchResults
+from langchain_community.utilities import DuckDuckGoSearchAPIWrapper
 import trafilatura
 import streamlit as st
 
-search_tool = DuckDuckGoSearchResults(output_format="list")
+wrapper = DuckDuckGoSearchAPIWrapper(region="de-de", time="d", max_results=5)
+search_tool = DuckDuckGoSearchResults(api_wrapper=wrapper, output_format="list")
 
 async def research_tool(query: str) -> str:
     """
@@ -10,7 +12,7 @@ async def research_tool(query: str) -> str:
     """
     with st.spinner("Searching the Web"):
         try:
-            results = search_tool.run(query)  # Use .run() instead of .invoke()
+            results = search_tool.invoke(query)
             return results  # Directly return the search results string
         except Exception as e:
             return f"Error fetching search results: {str(e)}"
