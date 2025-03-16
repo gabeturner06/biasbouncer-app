@@ -1,21 +1,19 @@
 from langchain_community.tools import DuckDuckGoSearchResults
 import trafilatura
 import streamlit as st
-import asyncio
 
 search_tool = DuckDuckGoSearchResults(output_format="list")
 
 async def research_tool(query: str) -> str:
     """
-    Calls the DuckDuckGo search API and returns summarized results with a timeout.
+    Calls the DuckDuckGo search API and returns summarized results.
     """
-    try:
-        return await asyncio.wait_for(asyncio.to_thread(search_tool.run, query), timeout=10)  # 10 sec timeout
-    except asyncio.TimeoutError:
-        return "Error: Research operation timed out."
-    except Exception as e:
-        return f"Error fetching search results: {str(e)}"
-
+    with st.spinner("Searching the Web"):
+        try:
+            results = search_tool.run(query)  # Use .run() instead of .invoke()
+            return results  # Directly return the search results string
+        except Exception as e:
+            return f"Error fetching search results: {str(e)}"
     
 
 async def scrape_webpage_tool(url: str) -> dict:
